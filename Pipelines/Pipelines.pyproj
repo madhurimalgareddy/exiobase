@@ -25,6 +25,7 @@
     <Compile Include="Functions\insert_postgres.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Pipelines\Imports.py" />
     <Compile Include="Pipelines\IndustryFactor.py">
       <SubType>Code</SubType>
     </Compile>
