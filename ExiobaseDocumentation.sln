@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34701.34
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "ExiobaseDocumentation", "ExiobaseDocumentation\ExiobaseDocumentation.sqlproj", "{185757B8-6BC5-4C7A-8B98-23C432988CB0}"
+EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Pipelines", "Pipelines\Pipelines.pyproj", "{BD9F2762-6866-4EA9-8877-26E0F28CB7BD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{185757B8-6BC5-4C7A-8B98-23C432988CB0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{185757B8-6BC5-4C7A-8B98-23C432988CB0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{185757B8-6BC5-4C7A-8B98-23C432988CB0}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{185757B8-6BC5-4C7A-8B98-23C432988CB0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{185757B8-6BC5-4C7A-8B98-23C432988CB0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{185757B8-6BC5-4C7A-8B98-23C432988CB0}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{BD9F2762-6866-4EA9-8877-26E0F28CB7BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BD9F2762-6866-4EA9-8877-26E0F28CB7BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BE3FCD21-E144-4D67-967A-2400F5D38D4F}
+	EndGlobalSection
+EndGlobal
