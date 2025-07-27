@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Industry Trade Flow Analysis for Exiobase Data
-Extracts trade flow data for 2019 with US as importing country (region2)
+Extracts trade flow data based on config settings for imports, exports, or domestic flows
 Outputs industry_tradeflow.csv with columns: year, region1, region2, industry1, industry2, amount
 """
 
@@ -14,12 +14,18 @@ from datetime import datetime
 import os
 from pathlib import Path
 import pickle as pkl
+from config_loader import load_config, get_file_path, get_reference_file_path, print_config_summary
 
 class ExiobaseTradeFlow:
     def __init__(self):
-        self.year = 2019
-        self.importing_country = "US"
-        self.output_file = "csv/industry_tradeflow.csv"
+        # Load configuration
+        self.config = load_config()
+        print_config_summary(self.config)
+        
+        self.year = self.config['YEAR']
+        self.country = self.config['COUNTRY']
+        self.tradeflow_type = self.config['TRADEFLOW']
+        self.output_file = get_file_path(self.config, 'industry_tradeflow')
         self.model_type = 'pxp'  # product by product matrix
         
         # Set up paths for Exiobase data storage
@@ -36,9 +42,9 @@ class ExiobaseTradeFlow:
         """
         Load the sector mapping from industries.csv or create it if it doesn't exist
         """
-        industries_file = Path(__file__).parent / 'csv/industries.csv'
+        industries_file = get_reference_file_path(self.config, 'industries')
         
-        if industries_file.exists():
+        if Path(industries_file).exists():
             print("Loading existing sector mapping from industries.csv")
             mapping_df = pd.read_csv(industries_file)
             # Create a mapping dictionary from sector name to 5-char ID
@@ -54,9 +60,9 @@ class ExiobaseTradeFlow:
         """
         Create the factors.csv export if it doesn't exist
         """
-        factors_file = Path(__file__).parent / 'csv/factors.csv'
+        factors_file = get_reference_file_path(self.config, 'factors')
         
-        if factors_file.exists():
+        if Path(factors_file).exists():
             print("factors.csv already exists")
         else:
             print("Creating factors.csv from Exiobase extensions...")
@@ -74,7 +80,8 @@ class ExiobaseTradeFlow:
         
         try:
             # Load the factors mapping
-            factors_df = pd.read_csv('csv/factors.csv')
+            factors_file = get_reference_file_path(self.config, 'factors')
+            factors_df = pd.read_csv(factors_file)
             
             # Create a mapping from factor names to factor_ids
             factor_mapping = dict(zip(factors_df['name'], factors_df['factor_id']))
@@ -133,11 +140,13 @@ class ExiobaseTradeFlow:
             # Create DataFrame and save
             if all_trade_factors:
                 trade_factors_df = pd.DataFrame(all_trade_factors)
-                trade_factors_df.to_csv('csv/trade_factors_lite.csv', index=False)
+                output_file = get_file_path(self.config, 'trade_factors')
+                trade_factors_df.to_csv(output_file, index=False)
                 print(f"Created trade_factors_lite.csv with {len(trade_factors_df)} factor-trade relationships")
             else:
                 print("No trade-factor relationships found, creating empty trade_factors_lite.csv")
-                pd.DataFrame(columns=['trade_id', 'factor_id', 'coefficient', 'impact_value']).to_csv('csv/trade_factors_lite.csv', index=False)
+                output_file = get_file_path(self.config, 'trade_factors')
+                pd.DataFrame(columns=['trade_id', 'factor_id', 'coefficient', 'impact_value']).to_csv(output_file, index=False)
                 
         except Exception as e:
             print(f"Error creating trade_factors_lite.csv: {e}")
@@ -177,7 +186,8 @@ class ExiobaseTradeFlow:
                     })
             
             trade_factors_df = pd.DataFrame(sample_factors)
-            trade_factors_df.to_csv('csv/trade_factors_lite.csv', index=False)
+            output_file = get_file_path(self.config, 'trade_factors')
+            trade_factors_df.to_csv(output_file, index=False)
             print(f"Created sample trade_factors_lite.csv with {len(trade_factors_df)} relationships")
             
         except Exception as e:
@@ -220,9 +230,9 @@ class ExiobaseTradeFlow:
 
     def extract_m_matrix_data(self, exio_model):
         """
-        Extract the Import Matrix (M) data from Exiobase model
+        Extract trade flow data from Exiobase model based on tradeflow type
         """
-        print("Extracting Import Matrix data...")
+        print(f"Extracting {self.tradeflow_type} trade flow data...")
         
         # Get the Z matrix (inter-industry flows)
         Z = exio_model.Z.copy()
@@ -235,24 +245,41 @@ class ExiobaseTradeFlow:
         Z_stacked = Z.stack(level=['to_region', 'to_sector'], future_stack=True).reset_index()
         Z_stacked.columns = ['from_region', 'from_sector', 'to_region', 'to_sector', 'flow']
         
-        # Filter for flows to the importing country (US)
-        Z_us_imports = Z_stacked[Z_stacked['to_region'] == self.importing_country].copy()
-        
-        # Remove domestic flows (US to US)
-        Z_us_imports = Z_us_imports[Z_us_imports['from_region'] != self.importing_country].copy()
+        # Filter based on tradeflow type
+        if self.tradeflow_type == 'imports':
+            # Filter for flows to the country (imports)
+            Z_filtered = Z_stacked[Z_stacked['to_region'] == self.country].copy()
+            # Remove domestic flows
+            Z_filtered = Z_filtered[Z_filtered['from_region'] != self.country].copy()
+            print(f"Processing imports to {self.country}")
+        elif self.tradeflow_type == 'exports':
+            # Filter for flows from the country (exports)
+            Z_filtered = Z_stacked[Z_stacked['from_region'] == self.country].copy()
+            # Remove domestic flows
+            Z_filtered = Z_filtered[Z_filtered['to_region'] != self.country].copy()
+            print(f"Processing exports from {self.country}")
+        elif self.tradeflow_type == 'domestic':
+            # Filter for flows within the country (domestic)
+            Z_filtered = Z_stacked[
+                (Z_stacked['from_region'] == self.country) & 
+                (Z_stacked['to_region'] == self.country)
+            ].copy()
+            print(f"Processing domestic flows within {self.country}")
+        else:
+            raise ValueError(f"Invalid tradeflow type: {self.tradeflow_type}")
         
         # Filter out zero or very small flows
-        Z_us_imports = Z_us_imports[Z_us_imports['flow'] > 0.01].copy()
+        Z_filtered = Z_filtered[Z_filtered['flow'] > 0.01].copy()
         
         # Map sector names to 5-character industry IDs
-        Z_us_imports['industry1'] = Z_us_imports['from_sector'].map(self.sector_mapping)
-        Z_us_imports['industry2'] = Z_us_imports['to_sector'].map(self.sector_mapping)
+        Z_filtered['industry1'] = Z_filtered['from_sector'].map(self.sector_mapping)
+        Z_filtered['industry2'] = Z_filtered['to_sector'].map(self.sector_mapping)
         
         # Remove rows where mapping failed (should be rare)
-        Z_us_imports = Z_us_imports.dropna(subset=['industry1', 'industry2'])
+        Z_filtered = Z_filtered.dropna(subset=['industry1', 'industry2'])
         
         # Aggregate by 5-character industry IDs
-        trade_data = Z_us_imports.groupby(['from_region', 'to_region', 'industry1', 'industry2']).agg({
+        trade_data = Z_filtered.groupby(['from_region', 'to_region', 'industry1', 'industry2']).agg({
             'flow': 'sum'
         }).reset_index()
         
@@ -303,39 +330,48 @@ class ExiobaseTradeFlow:
         np.random.seed(42)  # For reproducible results
         
         data = []
-        for exp_region in regions:
-            if exp_region == self.importing_country:
-                continue
+        for region1 in regions:
+            for region2 in regions:
+                # Apply filtering based on tradeflow type
+                if self.tradeflow_type == 'imports':
+                    if region2 != self.country or region1 == self.country:
+                        continue
+                elif self.tradeflow_type == 'exports':
+                    if region1 != self.country or region2 == self.country:
+                        continue
+                elif self.tradeflow_type == 'domestic':
+                    if region1 != self.country or region2 != self.country:
+                        continue
                 
-            for exp_sector in sectors[:31]:  # Limit to first 31 sectors
-                for imp_sector in sectors[:31]:
-                    # Generate realistic trade amounts
-                    base_amount = np.random.lognormal(8, 2.5)
-                    
-                    # Sector-specific adjustments
-                    if any(x in exp_sector for x in ['Coke_', 'Comin', 'Basic']):
-                        base_amount *= 3.0  # Raw materials
-                    elif any(x in exp_sector for x in ['Chemi', 'Mach_', 'Elec_']):
-                        base_amount *= 2.0  # Manufacturing
-                    elif any(x in exp_sector for x in ['Finan', 'Legal', 'Educa']):
-                        base_amount *= 0.2  # Services
-                    
-                    # Region-specific adjustments
-                    if exp_region in ['CN', 'DE', 'JP']:
-                        base_amount *= 1.8
-                    elif exp_region in ['CA', 'MX']:
-                        base_amount *= 1.3
-                    
-                    # Only include significant flows
-                    if base_amount > 0.1:
-                        data.append({
-                            'year': self.year,
-                            'region1': exp_region,
-                            'region2': self.importing_country,
-                            'industry1': exp_sector,
-                            'industry2': imp_sector,
-                            'amount': round(base_amount, 2)
-                        })
+                for exp_sector in sectors[:31]:  # Limit to first 31 sectors
+                    for imp_sector in sectors[:31]:
+                        # Generate realistic trade amounts
+                        base_amount = np.random.lognormal(8, 2.5)
+                        
+                        # Sector-specific adjustments
+                        if any(x in exp_sector for x in ['Coke_', 'Comin', 'Basic']):
+                            base_amount *= 3.0  # Raw materials
+                        elif any(x in exp_sector for x in ['Chemi', 'Mach_', 'Elec_']):
+                            base_amount *= 2.0  # Manufacturing
+                        elif any(x in exp_sector for x in ['Finan', 'Legal', 'Educa']):
+                            base_amount *= 0.2  # Services
+                        
+                        # Region-specific adjustments
+                        if region1 in ['CN', 'DE', 'JP']:
+                            base_amount *= 1.8
+                        elif region1 in ['CA', 'MX']:
+                            base_amount *= 1.3
+                        
+                        # Only include significant flows
+                        if base_amount > 0.1:
+                            data.append({
+                                'year': self.year,
+                                'region1': region1,
+                                'region2': region2,
+                                'industry1': exp_sector,
+                                'industry2': imp_sector,
+                                'amount': round(base_amount, 2)
+                            })
         
         df = pd.DataFrame(data)
         # Add trade_id for fallback data
@@ -349,7 +385,7 @@ class ExiobaseTradeFlow:
         """
         Process and format the trade flow data
         """
-        print(f"Processing trade flows for {self.year} with {self.importing_country} as importer...")
+        print(f"Processing {self.tradeflow_type} flows for {self.year} with {self.country}...")
         
         # Try to download and process real Exiobase data
         exio_model = self.download_and_process_exiobase()
@@ -392,7 +428,8 @@ class ExiobaseTradeFlow:
         start_time = datetime.now()
         print(f"Start time: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
         print(f"For year: {self.year}")
-        print(f"For importer: {self.importing_country}")
+        print(f"For country: {self.country}")
+        print(f"Trade flow type: {self.tradeflow_type}")
         print(f"Output: {self.output_file}")
         print()
         

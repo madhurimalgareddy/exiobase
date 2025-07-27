@@ -108,7 +108,7 @@ Environmental/economic factors with columns: `factor_id, unit, context, name, fu
 - **fullname**: Complete Exiobase stressor name
 - **721 factors** across 6 major contexts
 
-### trade_factors_lite.csv
+### trade_factors_lg.csv
 Links trade flows to environmental impacts: `trade_id, factor_id, coefficient, impact_value`
 - **coefficient**: Environmental intensity coefficient from Exiobase F matrix (factor per million EUR output)
   - Represents direct environmental factor per unit of economic output in exporting region/industry
@@ -121,7 +121,7 @@ Links trade flows to environmental impacts: `trade_id, factor_id, coefficient, i
 
 ### trade_impacts.csv
 Comprehensive environmental impact summary per trade transaction: `trade_id, year, region1, region2, industry1, industry2, amount, total_impact_value, factor_count, unique_factors, [context impacts], [factor type impacts], impact_intensity`
-- **total_impact_value**: Sum of all environmental impact values for this trade flow (aggregated from trade_factors_lite.csv)
+- **total_impact_value**: Sum of all environmental impact values for this trade flow (aggregated from trade_factors_lg.csv)
 - **factor_count**: Number of environmental factor relationships for this trade
 - **unique_factors**: Number of distinct environmental factors affecting this trade
 - **Context impacts**: Separate columns for each environmental context (emission/air, natural_resource/water, etc.)
@@ -159,7 +159,7 @@ Resource and non-air environmental impacts per trade transaction: `trade_id, yea
 
 ## Factor Selection Logic
 
-The trade_factors_lite.csv contains ~40 factors selected from the full 721 available factors using pattern matching on factor names. The selection process:
+The trade_factors_lg.csv contains \~40 factors selected from the full 721 available factors using pattern matching on factor names. The selection process:
 
 1. **Target factors**: CO2, CH4, N2O, CO, NOX (major air emissions)
 2. **Broad matching**: Used `.str.contains()` which captured variations:

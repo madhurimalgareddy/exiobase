@@ -7,13 +7,17 @@ import pandas as pd
 import pymrio
 from pathlib import Path
 import re
+from config_loader import load_config, get_reference_file_path
 
 def create_sector_mapping():
     """
     Create a standardized 5-character ID mapping for Exiobase sectors
     """
+    # Load configuration
+    config = load_config()
+    
     model_path = Path(__file__).parent / 'exiobase_data'
-    year = 2019
+    year = config['YEAR']
     model_type = 'pxp'
     
     exio_file = model_path / f'IOT_{year}_{model_type}.zip'
@@ -133,7 +137,7 @@ def create_sector_mapping():
     df = pd.DataFrame(sector_mapping)
     
     # Save to CSV
-    output_file = 'csv/industries.csv'
+    output_file = get_reference_file_path(config, 'industries')
     df.to_csv(output_file, index=False)
     print(f"\nCreated {output_file} with {len(df)} sectors")
     

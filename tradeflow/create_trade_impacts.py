@@ -5,24 +5,31 @@ Create trade_impacts.csv that shows total environmental impacts per trade transa
 
 import pandas as pd
 import numpy as np
+from config_loader import load_config, get_file_path, get_reference_file_path, print_config_summary
 
 def create_trade_impacts():
     """
     Create trade_impacts.csv by aggregating environmental impacts per trade transaction
     """
+    # Load configuration
+    config = load_config()
+    print_config_summary(config)
     
     print("Reading input files...")
     
     # Read the trade flows
-    trade_df = pd.read_csv('csv/industry_tradeflow.csv')
+    trade_file = get_file_path(config, 'industry_tradeflow')
+    trade_df = pd.read_csv(trade_file)
     print(f"Loaded {len(trade_df)} trade flows")
     
     # Read the trade factors (environmental coefficients and impacts)
-    trade_factors_df = pd.read_csv('csv/trade_factors_lite.csv')
+    trade_factors_file = get_file_path(config, 'trade_factors')
+    trade_factors_df = pd.read_csv(trade_factors_file)
     print(f"Loaded {len(trade_factors_df)} trade-factor relationships")
     
     # Read the factors metadata for units and context
-    factors_df = pd.read_csv('csv/factors.csv')
+    factors_file = get_reference_file_path(config, 'factors')
+    factors_df = pd.read_csv(factors_file)
     print(f"Loaded {len(factors_df)} factor definitions")
     
     # Merge trade_factors with factor metadata
@@ -115,7 +122,8 @@ def create_trade_impacts():
     trade_impacts = trade_impacts.sort_values('total_impact_value', ascending=False)
     
     # Save to CSV
-    trade_impacts.to_csv('csv/trade_impacts.csv', index=False)
+    output_file = get_file_path(config, 'trade_impacts')
+    trade_impacts.to_csv(output_file, index=False)
     
     print(f"\nCreated trade_impacts.csv with {len(trade_impacts)} trade transactions")
     

@@ -6,29 +6,31 @@ excluding air emissions which are covered in trade_impacts.csv
 
 import pandas as pd
 import numpy as np
+from config_loader import load_config, get_file_path, get_reference_file_path, print_config_summary
 
 def create_trade_resources():
     """
     Create trade_resources.csv focusing on non-air emission environmental impacts
     """
+    # Load configuration
+    config = load_config()
+    print_config_summary(config)
     
     print("Reading input files...")
     
     # Read the trade flows
-    trade_df = pd.read_csv('csv/industry_tradeflow.csv')
+    trade_file = get_file_path(config, 'industry_tradeflow')
+    trade_df = pd.read_csv(trade_file)
     print(f"Loaded {len(trade_df)} trade flows")
     
     # Read the trade factors (environmental coefficients and impacts)
-    # Use the full trade_factors file if available, otherwise fall back to the limited one
-    try:
-        trade_factors_df = pd.read_csv('csv/trade_factors.csv')
-        print(f"Loaded {len(trade_factors_df)} trade-factor relationships (full dataset)")
-    except FileNotFoundError:
-        trade_factors_df = pd.read_csv('csv/trade_factors_lite.csv')
-        print(f"Loaded {len(trade_factors_df)} trade-factor relationships (limited dataset)")
+    trade_factors_file = get_file_path(config, 'trade_factors')
+    trade_factors_df = pd.read_csv(trade_factors_file)
+    print(f"Loaded {len(trade_factors_df)} trade-factor relationships")
     
     # Read the factors metadata for units and context
-    factors_df = pd.read_csv('csv/factors.csv')
+    factors_file = get_reference_file_path(config, 'factors')
+    factors_df = pd.read_csv(factors_file)
     print(f"Loaded {len(factors_df)} factor definitions")
     
     # Merge trade_factors with factor metadata
@@ -63,7 +65,8 @@ def create_trade_resources():
         empty_df = trade_df.copy()
         empty_df['total_resource_value'] = 0
         empty_df['resource_count'] = 0
-        empty_df.to_csv('csv/trade_resources.csv', index=False)
+        output_file = get_file_path(config, 'trade_resources')
+        empty_df.to_csv(output_file, index=False)
         return empty_df
     
     print("Calculating resource impact summaries...")
@@ -193,7 +196,8 @@ def create_trade_resources():
     trade_resources = trade_resources.sort_values('total_resource_value', ascending=False)
     
     # Save to CSV
-    trade_resources.to_csv('csv/trade_resources.csv', index=False)
+    output_file = get_file_path(config, 'trade_resources')
+    trade_resources.to_csv(output_file, index=False)
     
     print(f"\nCreated trade_resources.csv with {len(trade_resources)} trade transactions")
     

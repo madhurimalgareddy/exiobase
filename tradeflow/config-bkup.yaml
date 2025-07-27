@@ -1,0 +1,22 @@
+# Which type of trade flow analysis to run
+# Trade flow type: 'imports', 'exports', or 'domestic'
+TRADEFLOW: exports
+YEAR: 2019
+COUNTRY: US
+FOLDERS:
+  base: csv
+  imports: csv/US/imports
+  exports: csv/US/exports
+  domestic: csv/US/domestic
+FILES:
+  factors: factors.csv
+  industries: industries.csv
+  industry_tradeflow: industry_tradeflow.csv
+  trade_factors: trade_factors_lg.csv
+  trade_impacts: trade_impacts.csv
+  trade_employment: trade_employment.csv
+  trade_resources: trade_resources.csv
+  trade_materials: trade_materials.csv
+PROCESSING:
+  sample_size: 1000 # Number of trade flows to process for performance
+  min_impact_threshold: 0.001 # Minimum impact value to include
