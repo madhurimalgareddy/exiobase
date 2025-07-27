@@ -14,15 +14,15 @@ def create_trade_impacts():
     print("Reading input files...")
     
     # Read the trade flows
-    trade_df = pd.read_csv('industry_tradeflow.csv')
+    trade_df = pd.read_csv('csv/industry_tradeflow.csv')
     print(f"Loaded {len(trade_df)} trade flows")
     
     # Read the trade factors (environmental coefficients and impacts)
-    trade_factors_df = pd.read_csv('trade_factors.csv')
+    trade_factors_df = pd.read_csv('csv/trade_factors_lite.csv')
     print(f"Loaded {len(trade_factors_df)} trade-factor relationships")
     
     # Read the factors metadata for units and context
-    factors_df = pd.read_csv('factors.csv')
+    factors_df = pd.read_csv('csv/factors.csv')
     print(f"Loaded {len(factors_df)} factor definitions")
     
     # Merge trade_factors with factor metadata
@@ -115,7 +115,7 @@ def create_trade_impacts():
     trade_impacts = trade_impacts.sort_values('total_impact_value', ascending=False)
     
     # Save to CSV
-    trade_impacts.to_csv('trade_impacts.csv', index=False)
+    trade_impacts.to_csv('csv/trade_impacts.csv', index=False)
     
     print(f"\nCreated trade_impacts.csv with {len(trade_impacts)} trade transactions")
     

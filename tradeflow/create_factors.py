@@ -116,7 +116,7 @@ def create_factors_csv():
     output_df = factors_df[['factor_id', 'flow', 'name', 'unit', 'context']].copy()
     
     # Save to CSV
-    output_file = 'factors.csv'
+    output_file = 'csv/factors.csv'
     output_df.to_csv(output_file, index=False)
     
     print(f"\nCreated {output_file} with {len(output_df)} factors")
@@ -132,7 +132,7 @@ def create_factors_csv():
     print(output_df.head(15).to_string(index=False))
     
     # Also save detailed version for reference
-    detailed_file = 'factors_detailed.csv'
+    detailed_file = 'csv/factors_detailed.csv'
     factors_df.to_csv(detailed_file, index=False)
     print(f"\nAlso created {detailed_file} with additional metadata")
     

@@ -95,7 +95,7 @@ Primary trade flow data with columns: `trade_id, year, region1, region2, industr
 - **industry1/industry2**: 5-character standardized industry codes
 
 ### industries.csv  
-Sector mapping with columns: `industry_id, name, category, sector_index, name_length`
+Sector mapping with columns: `industry_id, name, category`
 - **industry_id**: 5-character standardized codes (CRUDE, WHEAT, CATTL, etc.)
 - **category**: Logical groupings (Agriculture, Mining, Manufacturing, etc.)
 - **200 sectors** from Exiobase with standardized categorization
@@ -108,7 +108,7 @@ Environmental/economic factors with columns: `factor_id, unit, context, name, fu
 - **fullname**: Complete Exiobase stressor name
 - **721 factors** across 6 major contexts
 
-### trade_factors.csv
+### trade_factors_lite.csv
 Links trade flows to environmental impacts: `trade_id, factor_id, coefficient, impact_value`
 - **coefficient**: Environmental intensity coefficient from Exiobase F matrix (factor per million EUR output)
   - Represents direct environmental factor per unit of economic output in exporting region/industry
@@ -121,7 +121,7 @@ Links trade flows to environmental impacts: `trade_id, factor_id, coefficient, i
 
 ### trade_impacts.csv
 Comprehensive environmental impact summary per trade transaction: `trade_id, year, region1, region2, industry1, industry2, amount, total_impact_value, factor_count, unique_factors, [context impacts], [factor type impacts], impact_intensity`
-- **total_impact_value**: Sum of all environmental impact values for this trade flow (aggregated from trade_factors.csv)
+- **total_impact_value**: Sum of all environmental impact values for this trade flow (aggregated from trade_factors_lite.csv)
 - **factor_count**: Number of environmental factor relationships for this trade
 - **unique_factors**: Number of distinct environmental factors affecting this trade
 - **Context impacts**: Separate columns for each environmental context (emission/air, natural_resource/water, etc.)
@@ -137,9 +137,29 @@ Comprehensive environmental impact summary per trade transaction: `trade_id, yea
 - **impact_intensity**: Environmental impact per million USD of trade (total_impact_value/amount)
 - **126,166 trade flows** with environmental impact calculations for 1,000 major flows
 
+### trade_resources.csv
+Resource and non-air environmental impacts per trade transaction: `trade_id, year, region1, region2, industry1, industry2, amount, total_resource_value, resource_count, unique_resource_factors, [context impacts], [resource type impacts], [unit-based impacts], resource_intensity`
+- **total_resource_value**: Sum of all non-air environmental impacts (employment, water, land, energy, materials)
+- **resource_count**: Number of resource factor relationships for this trade
+- **Resource contexts**: Separate columns for major resource categories:
+  - economic/employment: Employment people and hours (12.2B total impact)
+  - emission/water: Water consumption and withdrawal (25M total impact) 
+  - natural_resource/energy: Energy use in TJ (3.7M total impact)
+  - natural_resource/land: Land use in km2 (563K total impact)
+  - natural_resource/in_ground: Material extraction in kt (391M total impact)
+- **Detailed resource types**: Specific impact categories:
+  - **Employment**: People (61M impact) and Hours (12.2B impact)
+  - **Water**: Consumption (14.6M Mm3) and Withdrawal (10.1M Mm3)
+  - **Energy**: Total energy use (3.7M TJ)
+  - **Land**: Cropland (365K km2), Forest (19M km2), Pastures (164K km2)
+  - **Materials**: Crops (86M kt), Metals (99M kt), Minerals (89M kt), Fossil fuels (62M kt)
+- **Unit aggregations**: Total impacts by physical units (Mm3, TJ, km2, kt, people, hours)
+- **resource_intensity**: Total resource impact per million USD of trade
+- **500 trade flows** with comprehensive resource impact data across all 6 environmental contexts
+
 ## Factor Selection Logic
 
-The trade_factors.csv contains ~40 factors selected from the full 721 available factors using pattern matching on factor names. The selection process:
+The trade_factors_lite.csv contains ~40 factors selected from the full 721 available factors using pattern matching on factor names. The selection process:
 
 1. **Target factors**: CO2, CH4, N2O, CO, NOX (major air emissions)
 2. **Broad matching**: Used `.str.contains()` which captured variations:

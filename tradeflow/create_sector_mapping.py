@@ -126,16 +126,14 @@ def create_sector_mapping():
         sector_mapping.append({
             'industry_id': candidate_id,
             'name': sector_str,
-            'category': category,
-            'sector_index': i,
-            'name_length': len(sector_str)
+            'category': category
         })
     
     # Create DataFrame
     df = pd.DataFrame(sector_mapping)
     
     # Save to CSV
-    output_file = 'industries.csv'
+    output_file = 'csv/industries.csv'
     df.to_csv(output_file, index=False)
     print(f"\nCreated {output_file} with {len(df)} sectors")
     
