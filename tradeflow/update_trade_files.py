@@ -5,15 +5,20 @@ Update existing industry_tradeflow.csv to add trade_id and create trade_factors_
 
 import pandas as pd
 import numpy as np
+from config_loader import load_config, get_file_path, get_reference_file_path
 
 def update_trade_files():
     """
     Add trade_id to existing industry_tradeflow.csv and create trade_factors_lite.csv
     """
     
+    # Load configuration
+    config = load_config()
+    
     # Read existing industry_tradeflow.csv
     print("Reading existing industry_tradeflow.csv...")
-    trade_df = pd.read_csv('csv/industry_tradeflow.csv')
+    trade_file = get_file_path(config, 'industry_tradeflow')
+    trade_df = pd.read_csv(trade_file)
     
     # Add trade_id column if it doesn't exist
     if 'trade_id' not in trade_df.columns:
@@ -25,12 +30,13 @@ def update_trade_files():
         trade_df = trade_df[cols]
         
         # Save updated file
-        trade_df.to_csv('csv/industry_tradeflow.csv', index=False)
+        trade_df.to_csv(trade_file, index=False)
         print(f"Updated industry_tradeflow.csv with trade_id column ({len(trade_df)} rows)")
     
     # Read factors.csv
     print("Reading factors.csv...")
-    factors_df = pd.read_csv('csv/factors.csv')
+    factors_file = get_reference_file_path(config, 'factors')
+    factors_df = pd.read_csv(factors_file)
     
     # Create trade_factors_lite.csv with realistic sample data
     print("Creating trade_factors_lite.csv...")
@@ -96,7 +102,8 @@ def update_trade_files():
     
     # Create DataFrame and save
     trade_factors_df = pd.DataFrame(trade_factors_list)
-    trade_factors_df.to_csv('csv/trade_factors_lite.csv', index=False)
+    output_file = get_file_path(config, 'trade_factors')
+    trade_factors_df.to_csv(output_file, index=False)
     
     print(f"Created trade_factors_lite.csv with {len(trade_factors_df)} factor-trade relationships")
     print(f"Factors included: {trade_factors_df['factor_id'].nunique()} unique factors")

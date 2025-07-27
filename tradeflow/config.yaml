@@ -4,10 +4,10 @@ TRADEFLOW: exports
 YEAR: 2019
 COUNTRY: US
 FOLDERS:
-  base: csv
-  imports: csv/US/imports
-  exports: csv/US/exports
-  domestic: csv/US/domestic
+  base: "year/{year}"
+  imports: "year/{year}/US/imports"
+  exports: "year/{year}/US/exports"
+  domestic: "year/{year}/US/domestic"
 FILES:
   factors: factors.csv
   industries: industries.csv

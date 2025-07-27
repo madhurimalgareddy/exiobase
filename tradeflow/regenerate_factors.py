@@ -4,15 +4,20 @@ Regenerate factors.csv with new column structure: factor_id,unit,context,name,fu
 """
 
 import pandas as pd
+from config_loader import load_config, get_reference_file_path
 
 def regenerate_factors():
     """
     Regenerate factors.csv with the new column order and remove flow column
     """
     
+    # Load configuration
+    config = load_config()
+    
     # Read the detailed factors file which has all the data we need
     print("Reading factors_detailed.csv...")
-    detailed_df = pd.read_csv('csv/factors_detailed.csv')
+    detailed_file = get_reference_file_path(config, 'factors').replace('.csv', '_detailed.csv')
+    detailed_df = pd.read_csv(detailed_file)
     
     # Create the new factors.csv with required columns in correct order
     factors_new = detailed_df[['factor_id', 'unit', 'context', 'name', 'full_stressor_name']].copy()
@@ -21,7 +26,8 @@ def regenerate_factors():
     factors_new = factors_new.rename(columns={'full_stressor_name': 'fullname'})
     
     # Save the new factors.csv
-    factors_new.to_csv('csv/factors.csv', index=False)
+    output_file = get_reference_file_path(config, 'factors')
+    factors_new.to_csv(output_file, index=False)
     
     print(f"Regenerated factors.csv with {len(factors_new)} factors")
     print("New column structure: factor_id, unit, context, name, fullname")
@@ -42,8 +48,8 @@ def regenerate_factors():
     
     # Clean up - remove the detailed file since we don't need it anymore
     import os
-    if os.path.exists('csv/factors_detailed.csv'):
-        os.remove('csv/factors_detailed.csv')
+    if os.path.exists(detailed_file):
+        os.remove(detailed_file)
         print("\nRemoved factors_detailed.csv (no longer needed)")
     
     return factors_new

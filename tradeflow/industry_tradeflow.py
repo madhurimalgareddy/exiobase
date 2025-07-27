@@ -67,7 +67,7 @@ class ExiobaseTradeFlow:
         else:
             print("Creating factors.csv from Exiobase extensions...")
             try:
-                from create_factors import create_factors_csv
+                from factors import create_factors_csv
                 create_factors_csv()
             except Exception as e:
                 print(f"Failed to create factors.csv: {e}")

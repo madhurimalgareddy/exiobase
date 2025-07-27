@@ -44,7 +44,9 @@ def get_output_folder(config, tradeflow_type=None):
     if tradeflow_type is None:
         tradeflow_type = config['TRADEFLOW']
     
-    return config['FOLDERS'][tradeflow_type]
+    folder_path = config['FOLDERS'][tradeflow_type]
+    # Substitute year placeholder
+    return folder_path.format(year=config['YEAR'])
 
 def get_file_path(config, file_key, tradeflow_type=None):
     """
@@ -63,6 +65,8 @@ def get_reference_file_path(config, file_key):
     Get path for reference files (always in base folder)
     """
     base_folder = config['FOLDERS']['base']
+    # Substitute year placeholder
+    base_folder = base_folder.format(year=config['YEAR'])
     filename = config['FILES'][file_key]
     
     # Ensure folder exists
