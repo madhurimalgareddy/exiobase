@@ -74,9 +74,9 @@ class ExiobaseTradeFlow:
 
     def create_trade_factors(self, trade_df, exio_model):
         """
-        Create trade_factors_lite.csv that links each trade flow to environmental factors
+        Create trade_factors.csv that links each trade flow to environmental factors
         """
-        print("Creating trade_factors_lite.csv with real Exiobase factor data...")
+        print("Creating trade_factors.csv with real Exiobase factor data...")
         
         try:
             # Load the factors mapping
@@ -142,21 +142,21 @@ class ExiobaseTradeFlow:
                 trade_factors_df = pd.DataFrame(all_trade_factors)
                 output_file = get_file_path(self.config, 'trade_factors')
                 trade_factors_df.to_csv(output_file, index=False)
-                print(f"Created trade_factors_lite.csv with {len(trade_factors_df)} factor-trade relationships")
+                print(f"Created trade_factors.csv with {len(trade_factors_df)} factor-trade relationships")
             else:
-                print("No trade-factor relationships found, creating empty trade_factors_lite.csv")
+                print("No trade-factor relationships found, creating empty trade_factors.csv")
                 output_file = get_file_path(self.config, 'trade_factors')
                 pd.DataFrame(columns=['trade_id', 'factor_id', 'coefficient', 'impact_value']).to_csv(output_file, index=False)
                 
         except Exception as e:
-            print(f"Error creating trade_factors_lite.csv: {e}")
+            print(f"Error creating trade_factors.csv: {e}")
             self.create_trade_factors_fallback(trade_df)
 
     def create_trade_factors_fallback(self, trade_df):
         """
-        Create a simplified trade_factors_lite.csv for fallback data
+        Create a simplified trade_factors.csv for fallback data
         """
-        print("Creating simplified trade_factors_lite.csv with sample data...")
+        print("Creating simplified trade_factors.csv with sample data...")
         
         try:
             # Create sample factor relationships for major flows
@@ -188,10 +188,10 @@ class ExiobaseTradeFlow:
             trade_factors_df = pd.DataFrame(sample_factors)
             output_file = get_file_path(self.config, 'trade_factors')
             trade_factors_df.to_csv(output_file, index=False)
-            print(f"Created sample trade_factors_lite.csv with {len(trade_factors_df)} relationships")
+            print(f"Created sample trade_factors.csv with {len(trade_factors_df)} relationships")
             
         except Exception as e:
-            print(f"Error creating fallback trade_factors_lite.csv: {e}")
+            print(f"Error creating fallback trade_factors.csv: {e}")
 
     def download_and_process_exiobase(self):
         """
@@ -455,7 +455,7 @@ class ExiobaseTradeFlow:
             print("to importing industries in the United States. Data extracted from Exiobase v3.8.2")
             print("multiregional input-output database covering 163 industries across 44 countries and 5 RoW regions.")
             print("Downloaded using pymrio.download_exiobase3() and processed via pymrio.parse_exiobase3().")
-            print("Additional exports: industries.csv (200 sectors), factors.csv (721 factors), trade_factors_lite.csv (factor impacts)")
+            print("Additional exports: industries.csv (200 sectors), factors.csv (721 factors), trade_factors.csv (factor impacts)")
             
             return True
             

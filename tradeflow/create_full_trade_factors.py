@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Create comprehensive trade_factors_lite.csv using ALL 721 factors, not just air emissions
+Create comprehensive trade_factors.csv using ALL 721 factors, not just air emissions
 This will enable proper creation of trade_resources.csv
 """
 
@@ -9,7 +9,7 @@ import numpy as np
 
 def create_full_trade_factors():
     """
-    Create comprehensive trade_factors_lite.csv using all environmental factors
+    Create comprehensive trade_factors.csv using all environmental factors
     """
     
     print("Reading input files...")
@@ -28,7 +28,7 @@ def create_full_trade_factors():
     for context, group in context_groups:
         print(f"  {context}: {len(group)} factors")
     
-    print("\nCreating comprehensive trade_factors_lite.csv...")
+    print("\nCreating comprehensive trade_factors.csv...")
     
     # Use a sample of trade flows for performance (first 500)
     sample_trades = trade_df.head(500)

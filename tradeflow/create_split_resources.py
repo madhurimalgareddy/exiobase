@@ -23,9 +23,9 @@ def create_split_resources():
     trade_df = pd.read_csv(get_file_path(config, 'industryflow'))
     print(f"Loaded {len(trade_df)} trade flows")
     
-    # Read the trade factors - try full dataset first
+    # Read the trade factors - try full _lg dataset first
     try:
-        trade_factors_df = pd.read_csv(get_file_path(config, 'trade_factors').replace('_lite', ''))
+        trade_factors_df = pd.read_csv(get_file_path(config, 'trade_factors').replace('_lg', ''))
         print(f"Loaded {len(trade_factors_df)} trade-factor relationships (full dataset)")
     except FileNotFoundError:
         trade_factors_df = pd.read_csv(get_file_path(config, 'trade_factors'))

@@ -88,11 +88,22 @@ python industry_tradeflow.py
 
 ## Output Files Structure
 
-### industry_tradeflow.csv
+### industrylow.csv
 Primary trade flow data with columns: `trade_id, year, region1, region2, industry1, industry2, amount`
 - **trade_id**: Unique 1-based identifier for each trade flow
 - **amount**: Trade value in millions USD
 - **industry1/industry2**: 5-character standardized industry codes
+
+industrylow.csv only extracts from the Z matrix (intermediate flows),
+so we add matrices Y (final demand) and F (factor inputs).
+
+### industrylow_finaldemand.csv (Y Matrix)
+
+Y matrix (final demand): 8,000 × \~300 final demand categories
+
+### industrylow_factor.csv (F Matrix)
+
+F matrices: 721 factors × 8,000 sectors across 6 extensions
 
 ### industries.csv  
 Sector mapping with columns: `industry_id, name, category`
