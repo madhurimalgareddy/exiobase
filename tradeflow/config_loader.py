@@ -92,6 +92,6 @@ if __name__ == "__main__":
     
     # Test file path generation
     print("Sample file paths:")
-    print(f"  Industry trade flow: {get_file_path(config, 'industry_tradeflow')}")
+    print(f"  Industry trade flow: {get_file_path(config, 'industryflow')}")
     print(f"  Trade employment: {get_file_path(config, 'trade_employment')}")
     print(f"  Industries (ref): {get_reference_file_path(config, 'industries')}")

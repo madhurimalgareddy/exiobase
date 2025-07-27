@@ -20,7 +20,7 @@ def create_split_resources():
     print("Reading input files...")
     
     # Read the trade flows using config paths
-    trade_df = pd.read_csv(get_file_path(config, 'industry_tradeflow'))
+    trade_df = pd.read_csv(get_file_path(config, 'industryflow'))
     print(f"Loaded {len(trade_df)} trade flows")
     
     # Read the trade factors - try full dataset first

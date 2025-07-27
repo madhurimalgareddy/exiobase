@@ -11,7 +11,7 @@ FOLDERS:
 FILES:
   factors: factors.csv
   industries: industries.csv
-  industry_tradeflow: industry_tradeflow.csv
+  industryflow: industryflow.csv
   industryflow_finaldemand: industryflow_finaldemand.csv
   trade_factors: trade_factors_lg.csv
   trade_impacts: trade_impacts.csv

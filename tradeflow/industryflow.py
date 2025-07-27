@@ -2,7 +2,7 @@
 """
 Industry Trade Flow Analysis for Exiobase Data
 Extracts trade flow data based on config settings for imports, exports, or domestic flows
-Outputs industry_tradeflow.csv with columns: year, region1, region2, industry1, industry2, amount
+Outputs industryflow.csv with columns: year, region1, region2, industry1, industry2, amount
 """
 
 import pandas as pd
@@ -25,7 +25,7 @@ class ExiobaseTradeFlow:
         self.year = self.config['YEAR']
         self.country = self.config['COUNTRY']
         self.tradeflow_type = self.config['TRADEFLOW']
-        self.output_file = get_file_path(self.config, 'industry_tradeflow')
+        self.output_file = get_file_path(self.config, 'industryflow')
         self.model_type = 'pxp'  # product by product matrix
         
         # Set up paths for Exiobase data storage

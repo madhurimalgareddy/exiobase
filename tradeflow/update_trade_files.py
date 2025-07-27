@@ -15,9 +15,9 @@ def update_trade_files():
     # Load configuration
     config = load_config()
     
-    # Read existing industry_tradeflow.csv
-    print("Reading existing industry_tradeflow.csv...")
-    trade_file = get_file_path(config, 'industry_tradeflow')
+    # Read existing industryflow.csv
+    print("Reading existing industryflow.csv...")
+    trade_file = get_file_path(config, 'industryflow')
     trade_df = pd.read_csv(trade_file)
     
     # Add trade_id column if it doesn't exist
@@ -31,7 +31,7 @@ def update_trade_files():
         
         # Save updated file
         trade_df.to_csv(trade_file, index=False)
-        print(f"Updated industry_tradeflow.csv with trade_id column ({len(trade_df)} rows)")
+        print(f"Updated industryflow.csv with trade_id column ({len(trade_df)} rows)")
     
     # Read factors.csv
     print("Reading factors.csv...")
