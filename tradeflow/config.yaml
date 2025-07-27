@@ -13,6 +13,7 @@ FILES:
   industries: industries.csv
   industryflow: industryflow.csv
   industryflow_finaldemand: industryflow_finaldemand.csv
+  industryflow_factor: industryflow_factor.csv
   trade_factors: trade_factors_lg.csv
   trade_impacts: trade_impacts.csv
   trade_employment: trade_employment.csv
