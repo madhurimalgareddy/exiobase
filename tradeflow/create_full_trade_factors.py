@@ -99,16 +99,20 @@ def create_domestic_trade_factors_lite(config):
     trade_factors_df.to_csv(output_path, index=False)
     
     print(f"\n✅ Created {output_path} with {len(trade_factors_df)} factor-trade relationships")
-    print(f"Factors included: {trade_factors_df['factor_id'].nunique()} unique factors")
-    print(f"Trades covered: {trade_factors_df['trade_id'].nunique()} trade flows")
     
-    # Show breakdown by extension
     if not trade_factors_df.empty:
+        print(f"Factors included: {trade_factors_df['factor_id'].nunique()} unique factors")
+        print(f"Trades covered: {trade_factors_df['trade_id'].nunique()} trade flows")
+        
+        # Show breakdown by extension
         extension_breakdown = trade_factors_df.merge(selected_factors[['factor_id', 'extension']], on='factor_id')
         extension_counts = extension_breakdown['extension'].value_counts()
         print(f"\nBreakdown by extension:")
         for extension, count in extension_counts.items():
             print(f"  {extension}: {count:,} relationships")
+    else:
+        print("⚠️  No trade flows found - created empty trade_factors_lite.csv")
+        print("This may indicate an issue with domestic trade flow data processing")
     
     return trade_factors_df
 
