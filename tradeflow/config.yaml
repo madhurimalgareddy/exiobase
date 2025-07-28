@@ -23,4 +23,4 @@ PROCESSING:
   sample_size: 1000 # Number of trade flows to process for performance
   min_impact_threshold: 0.001 # Minimum impact value to include
   use_partial_factors: true # Create smaller trade_factors.csv with selected factors
-  partial_factor_limit: 50 # Maximum number of factors to include in small version
+  partial_factor_limit: 120 # Maximum number of factors to include in small version. 100 outputs 

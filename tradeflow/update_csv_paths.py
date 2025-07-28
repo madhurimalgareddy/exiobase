@@ -23,7 +23,6 @@ def update_csv_paths():
         'create_full_trade_factors.py', 
         'create_sector_mapping.py',
         'create_trade_impacts.py',
-        'create_trade_resources.py',
         'industry_tradeflow.py',
         'regenerate_factors.py',
         'update_trade_files.py'
