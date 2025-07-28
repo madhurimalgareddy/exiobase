@@ -1,6 +1,6 @@
-TRADEFLOW: exports
+TRADEFLOW: domestic
 YEAR: 2019
-COUNTRY: CN
+COUNTRY: IN,US
 FOLDERS:
   base: year/{year}
   imports: year/{year}/{country}/imports
