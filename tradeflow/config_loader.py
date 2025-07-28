@@ -45,8 +45,26 @@ def get_output_folder(config, tradeflow_type=None):
         tradeflow_type = config['TRADEFLOW']
     
     folder_path = config['FOLDERS'][tradeflow_type]
+    # Handle COUNTRY as either string or dict with current sub-parameter
+    country_config = config['COUNTRY']
+    if isinstance(country_config, dict):
+        if 'current' in country_config:
+            country = country_config['current']
+        elif 'list' in country_config:
+            # If no current is set, use first from list
+            country_list = country_config['list'].split(',')
+            country = country_list[0].strip()
+        else:
+            country = str(country_config)
+    elif isinstance(country_config, str):
+        if ',' in country_config:
+            country = country_config.split(',')[0].strip()  
+        else:
+            country = country_config
+    else:
+        country = str(country_config)
     # Substitute year and country placeholders
-    return folder_path.format(year=config['YEAR'], country=config['COUNTRY'])
+    return folder_path.format(year=config['YEAR'], country=country)
 
 def get_file_path(config, file_key, tradeflow_type=None):
     """
@@ -81,7 +99,19 @@ def print_config_summary(config):
     print(f"Configuration Summary:")
     print(f"  Trade Flow: {config['TRADEFLOW']}")
     print(f"  Year: {config['YEAR']}")
-    print(f"  Country: {config['COUNTRY']}")
+    
+    country_config = config['COUNTRY']
+    if isinstance(country_config, dict):
+        current_country = country_config.get('current', 'Not set')
+        country_list = country_config.get('list', 'Not set')
+        print(f"  Current Country: {current_country}")
+        print(f"  Available Countries: {country_list}")
+    else:
+        current_country = country_config.split(',')[0].strip() if ',' in str(country_config) else str(country_config)
+        print(f"  Current Country: {current_country}")
+        if ',' in str(country_config):
+            print(f"  All Countries: {country_config}")
+    
     print(f"  Output Folder: {get_output_folder(config)}")
     print()
 

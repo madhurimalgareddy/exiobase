@@ -1,6 +1,8 @@
 TRADEFLOW: domestic
 YEAR: 2019
-COUNTRY: IN,US
+COUNTRY:
+  list: IN
+  current: IN
 FOLDERS:
   base: year/{year}
   imports: year/{year}/{country}/imports
@@ -12,7 +14,8 @@ FILES:
   industryflow: industryflow.csv
   industryflow_finaldemand: industryflow_finaldemand.csv
   industryflow_factor: industryflow_factor.csv
-  trade_factors: trade_factors_lg.csv
+  trade_factors: trade_factors_lite.csv
+  trade_factors_lite: trade_factors_lite.csv
   trade_impacts: trade_impacts.csv
   trade_employment: trade_employment.csv
   trade_resources: trade_resources.csv
@@ -22,3 +25,4 @@ PROCESSING:
   min_impact_threshold: 0.001
   use_partial_factors: true
   partial_factor_limit: 120
+  partial_factor_limit_domestic: 50
