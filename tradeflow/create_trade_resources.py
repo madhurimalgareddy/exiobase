@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """
-Create trade_resources.csv that focuses on resource impacts (employment, land, water, energy, materials)
-excluding air emissions which are covered in trade_impacts.csv
+Create split resource files: trade_employment.csv, trade_resources.csv (includes crops), trade_materials.csv
+Reduces large trade_resources.csv (20MB) by splitting into focused category files.
+Excludes air emissions which are covered in trade_impacts.csv
+
+- Reads: industryflow.csv, trade_factors.csv, factors.csv (existing CSV files)
+- Does NOT: Pull directly from exio_file.zip (avoiding performance issues)
 """
 
 import pandas as pd
@@ -10,7 +14,8 @@ from config_loader import load_config, get_file_path, get_reference_file_path, p
 
 def create_trade_resources():
     """
-    Create trade_resources.csv focusing on non-air emission environmental impacts
+    Create split resource files: trade_employment.csv, trade_resources.csv, trade_materials.csv
+    Reduces large 20MB trade_resources.csv by splitting into focused category files
     """
     # Load configuration
     config = load_config()
@@ -18,15 +23,17 @@ def create_trade_resources():
     
     print("Reading input files...")
     
-    # Read the trade flows
-    trade_file = get_file_path(config, 'industry_tradeflow')
-    trade_df = pd.read_csv(trade_file)
+    # Read the trade flows using config paths
+    trade_df = pd.read_csv(get_file_path(config, 'industryflow'))
     print(f"Loaded {len(trade_df)} trade flows")
     
-    # Read the trade factors (environmental coefficients and impacts)
-    trade_factors_file = get_file_path(config, 'trade_factors')
-    trade_factors_df = pd.read_csv(trade_factors_file)
-    print(f"Loaded {len(trade_factors_df)} trade-factor relationships")
+    # Read the trade factors - try full _lg dataset first
+    try:
+        trade_factors_df = pd.read_csv(get_file_path(config, 'trade_factors').replace('_lg', ''))
+        print(f"Loaded {len(trade_factors_df)} trade-factor relationships (full dataset)")
+    except FileNotFoundError:
+        trade_factors_df = pd.read_csv(get_file_path(config, 'trade_factors'))
+        print(f"Loaded {len(trade_factors_df)} trade-factor relationships (lite dataset)")
     
     # Read the factors metadata for units and context
     factors_file = get_reference_file_path(config, 'factors')
@@ -192,14 +199,70 @@ def create_trade_resources():
     trade_resources['resource_intensity'] = (trade_resources['total_resource_value'] / trade_resources['amount']).round(6)
     trade_resources['resource_intensity'] = trade_resources['resource_intensity'].replace([np.inf, -np.inf], 0)
     
-    # Sort by total resource value descending
-    trade_resources = trade_resources.sort_values('total_resource_value', ascending=False)
+    # Define resource categories for splitting (same as create_split_resources.py)
+    employment_contexts = ['economic/employment']
+    resources_contexts = ['emission/water', 'natural_resource/water', 'natural_resource/land', 'natural_resource/energy']
+    materials_contexts = ['natural_resource/in_ground']
     
-    # Save to CSV
-    output_file = get_file_path(config, 'trade_resources')
-    trade_resources.to_csv(output_file, index=False)
+    # Additional criteria for resources vs materials
+    crops_keywords = ['Crops', 'Primary Crops', 'Agriculture', 'Forestry', 'Fishery']
     
-    print(f"\nCreated trade_resources.csv with {len(trade_resources)} trade transactions")
+    print("Splitting into 3 output files...")
+    
+    # Split trade_resources into 3 category files
+    # 1. EMPLOYMENT - economic/employment factors
+    employment_cols = [col for col in trade_resources.columns if 'Employment' in col]
+    base_cols = ['trade_id', 'year', 'region1', 'region2', 'industry1', 'industry2', 'amount']
+    
+    trade_employment = trade_resources[base_cols + employment_cols].copy()
+    if employment_cols:
+        trade_employment['total_employment_value'] = trade_employment[employment_cols].sum(axis=1)
+        trade_employment['employment_count'] = (trade_employment[employment_cols] > 0).sum(axis=1)
+    else:
+        trade_employment['total_employment_value'] = 0
+        trade_employment['employment_count'] = 0
+    
+    # 2. RESOURCES - water, land, energy + crops
+    resource_cols = [col for col in trade_resources.columns 
+                    if any(keyword in col for keyword in ['Water', 'Land', 'Energy', 'Crop', 'Forest'])]
+    
+    trade_resources_split = trade_resources[base_cols + resource_cols].copy()
+    if resource_cols:
+        trade_resources_split['total_resource_value'] = trade_resources_split[resource_cols].sum(axis=1)
+        trade_resources_split['resource_count'] = (trade_resources_split[resource_cols] > 0).sum(axis=1)
+    else:
+        trade_resources_split['total_resource_value'] = 0
+        trade_resources_split['resource_count'] = 0
+    
+    # 3. MATERIALS - in_ground materials excluding crops
+    material_cols = [col for col in trade_resources.columns 
+                    if any(keyword in col for keyword in ['Metal', 'Mineral', 'Fossil', 'Salt', 'Stone']) 
+                    and not any(crop in col for crop in crops_keywords)]
+    
+    trade_materials = trade_resources[base_cols + material_cols].copy()
+    if material_cols:
+        trade_materials['total_material_value'] = trade_materials[material_cols].sum(axis=1)
+        trade_materials['material_count'] = (trade_materials[material_cols] > 0).sum(axis=1)
+    else:
+        trade_materials['total_material_value'] = 0
+        trade_materials['material_count'] = 0
+    
+    # Save the 3 split files
+    output_files = {
+        'trade_employment': trade_employment,
+        'trade_resources': trade_resources_split,
+        'trade_materials': trade_materials
+    }
+    
+    for file_key, df in output_files.items():
+        output_file = get_file_path(config, file_key)
+        df.to_csv(output_file, index=False)
+        print(f"Created {file_key}.csv with {len(df)} trade transactions")
+    
+    print(f"\nSplit large trade_resources.csv into 3 focused files:")
+    print(f"  - trade_employment.csv: {len(employment_cols)} employment factors")
+    print(f"  - trade_resources.csv: {len(resource_cols)} resource factors (water/land/energy/crops)")
+    print(f"  - trade_materials.csv: {len(material_cols)} material factors (metals/minerals/fossil fuels)")
     
     # Display summary statistics
     print(f"\nSummary Statistics:")

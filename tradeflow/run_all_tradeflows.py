@@ -46,7 +46,6 @@ def process_tradeflow_type(tradeflow_type):
     scripts = [
         'industry_tradeflow.py',
         'create_trade_impacts.py', 
-        'create_trade_resources.py',
         'create_split_resources.py'
     ]
     

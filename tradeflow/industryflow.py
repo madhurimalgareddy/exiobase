@@ -3,6 +3,29 @@
 Industry Trade Flow Analysis for Exiobase Data
 Extracts trade flow data based on config settings for imports, exports, or domestic flows
 Outputs industryflow.csv with columns: year, region1, region2, industry1, industry2, amount
+
+Default (Recommended):
+python industryflow.py
+Creates small trade_factors.csv (~50 factors, manageable size)
+
+Large File (Not Recommended):
+python industryflow.py -lag
+Creates trade_factors_lg.csv (~1.5GB, causes Node.js memory errors) 
+
+Creates 4 files
+
+  1. Reference Files (created if they don't exist) - used for trade factor generation process:
+  - industries.csv - Sector mapping with 5-character industry codes (calls create_sector_mapping())
+  - factors.csv - Environmental factor definitions from Exiobase extensions (calls create_factors_csv())
+
+  2. Primary Output:
+  - industryflow.csv - The main trade flow data with columns: trade_id, year, region1, region2, industry1, industry2,
+  amount
+
+  3. Trade Factors (your focus):
+  - trade_factors.csv (default, small ~50 factors)
+  - trade_factors_lg.csv (with -lag flag, large ~721 factors)
+
 """
 
 import pandas as pd
@@ -14,12 +37,14 @@ from datetime import datetime
 import os
 from pathlib import Path
 import pickle as pkl
+import argparse
 from config_loader import load_config, get_file_path, get_reference_file_path, print_config_summary
 
 class ExiobaseTradeFlow:
-    def __init__(self):
+    def __init__(self, use_large_factors=False):
         # Load configuration
         self.config = load_config()
+        self.use_large_factors = use_large_factors
         print_config_summary(self.config)
         
         self.year = self.config['YEAR']
@@ -72,6 +97,51 @@ class ExiobaseTradeFlow:
             except Exception as e:
                 print(f"Failed to create factors.csv: {e}")
 
+    def _apply_partial_factors_filter(self, F_stacked, ext_name):
+        """
+        Apply filtering to create smaller trade_factors.csv using selected factors
+        """
+        partial_limit = self.config['PROCESSING'].get('partial_factor_limit', 50)
+        
+        # Define priority factors for each extension
+        priority_factors = {
+            'air_emissions': ['CO2', 'CH4', 'N2O', 'NOX', 'CO', 'SO2', 'NH3', 'PM10', 'PM2.5'],
+            'employment': ['Employment people', 'Employment hours'],
+            'energy': ['Energy use', 'Electricity', 'Natural gas', 'Oil'],
+            'water': ['Water consumption', 'Water withdrawal'],
+            'land': ['Cropland', 'Forest', 'Pastures', 'Artificial'],
+            'material': ['Metal Ores', 'Non-Metallic Minerals', 'Fossil Fuels', 'Primary Crops']
+        }
+        
+        selected_factors = priority_factors.get(ext_name, [])
+        
+        if selected_factors:
+            # Filter by priority factors first
+            priority_mask = F_stacked['flowable'].str.contains('|'.join(selected_factors), case=False, na=False)
+            priority_data = F_stacked[priority_mask].copy()
+            
+            # If we still have too many, select top ones by coefficient magnitude
+            if len(priority_data) > partial_limit:
+                priority_data = priority_data.nlargest(partial_limit, 'coefficient')
+            
+            # If we have fewer than limit, add other significant factors
+            remaining_limit = partial_limit - len(priority_data)
+            if remaining_limit > 0:
+                other_data = F_stacked[~priority_mask].copy()
+                if len(other_data) > 0:
+                    other_significant = other_data.nlargest(remaining_limit, 'coefficient')
+                    F_stacked = pd.concat([priority_data, other_significant], ignore_index=True)
+                else:
+                    F_stacked = priority_data
+            else:
+                F_stacked = priority_data
+        else:
+            # If no priority factors defined, select by coefficient magnitude
+            F_stacked = F_stacked.nlargest(partial_limit, 'coefficient')
+        
+        print(f"    Selected {len(F_stacked)} factors from {ext_name} (partial factors mode)")
+        return F_stacked
+
     def create_trade_factors(self, trade_df, exio_model):
         """
         Create trade_factors.csv that links each trade flow to environmental factors
@@ -84,6 +154,8 @@ class ExiobaseTradeFlow:
             factors_df = pd.read_csv(factors_file)
             
             # Create a mapping from factor names to factor_ids
+            # Extract factor names from stressor column (format: "CO2 - combustion - air")
+            factors_df['name'] = factors_df['stressor'].str.split(' - ').str[0]
             factor_mapping = dict(zip(factors_df['name'], factors_df['factor_id']))
             
             extensions = ['air_emissions', 'employment', 'energy', 'land', 'material', 'water']
@@ -103,8 +175,11 @@ class ExiobaseTradeFlow:
                         F_stacked = F_matrix.stack(level=['region', 'sector'], future_stack=True).reset_index()
                         F_stacked.columns = ['stressor', 'region', 'sector', 'coefficient']
                         
-                        # Filter for non-zero coefficients only
+                        # Filter for non-zero coefficients only and sample for performance
                         F_stacked = F_stacked[F_stacked['coefficient'] != 0].copy()
+                        
+                        # Keep ALL coefficients for comprehensive analysis
+                        print(f"  Found {len(F_stacked)} non-zero {ext_name} coefficients")
                         
                         # Map sectors to industry IDs
                         F_stacked['industry_id'] = F_stacked['sector'].map(self.sector_mapping)
@@ -115,21 +190,59 @@ class ExiobaseTradeFlow:
                         F_stacked['factor_id'] = F_stacked['flowable'].map(factor_mapping)
                         F_stacked = F_stacked.dropna(subset=['factor_id'])
                         
-                        # Create efficient merge between trade flows and factor coefficients
-                        # Use merge instead of iterating for better performance
-                        trade_factors_merge = trade_df.merge(
-                            F_stacked, 
-                            left_on=['region1', 'industry1'], 
-                            right_on=['region', 'industry_id'],
-                            how='inner'
-                        )
+                        # Apply partial factors filtering if not using large factors
+                        if not self.use_large_factors and self.config['PROCESSING'].get('use_partial_factors', True):
+                            F_stacked = self._apply_partial_factors_filter(F_stacked, ext_name)
+                        
+                        # Process ALL data with performance optimizations and progress tracking
+                        ext_start_time = time.time()
+                        print(f"  Processing ALL {len(trade_df)} trade flows with {len(F_stacked)} {ext_name} coefficients")
+                        
+                        # Optimize F_stacked for faster merging
+                        F_stacked = F_stacked.set_index(['region', 'industry_id'])
+                        trade_df_indexed = trade_df.set_index(['region1', 'industry1'])
+                        
+                        # Create efficient merge - process in chunks for memory management
+                        chunk_size = 10000
+                        trade_factors_chunks = []
+                        total_chunks = (len(trade_df) + chunk_size - 1) // chunk_size
+                        
+                        for i in range(0, len(trade_df), chunk_size):
+                            chunk_start = time.time()
+                            chunk_df = trade_df.iloc[i:i+chunk_size].copy()
+                            chunk_num = i // chunk_size + 1
+                            
+                            # Efficient merge using index-based joins
+                            trade_factors_chunk = chunk_df.merge(
+                                F_stacked.reset_index(), 
+                                left_on=['region1', 'industry1'], 
+                                right_on=['region', 'industry_id'],
+                                how='inner'
+                            )
+                            
+                            if not trade_factors_chunk.empty:
+                                trade_factors_chunks.append(trade_factors_chunk)
+                            
+                            # Progress report every chunk
+                            chunk_time = time.time() - chunk_start
+                            elapsed_total = time.time() - ext_start_time
+                            print(f"    Chunk {chunk_num}/{total_chunks} completed in {chunk_time:.1f}s | Total: {elapsed_total:.1f}s | Found: {len(trade_factors_chunk) if not trade_factors_chunk.empty else 0} matches")
+                        
+                        # Combine all chunks
+                        if trade_factors_chunks:
+                            trade_factors_merge = pd.concat(trade_factors_chunks, ignore_index=True)
+                            print(f"  Combined {len(trade_factors_chunks)} chunks -> {len(trade_factors_merge)} total matches")
+                        else:
+                            trade_factors_merge = pd.DataFrame()
                         
                         if not trade_factors_merge.empty:
                             # Calculate factor impacts
                             trade_factors_merge['impact_value'] = trade_factors_merge['amount'] * trade_factors_merge['coefficient']
                             
-                            # Filter for meaningful impacts
+                            # Filter for meaningful impacts (keep all meaningful data)
+                            initial_count = len(trade_factors_merge)
                             trade_factors_merge = trade_factors_merge[abs(trade_factors_merge['impact_value']) > 0.001]
+                            print(f"  Filtered {initial_count} -> {len(trade_factors_merge)} meaningful impacts (>0.001)")
                             
                             # Keep only needed columns
                             trade_factor_subset = trade_factors_merge[['trade_id', 'factor_id', 'coefficient', 'impact_value']]
@@ -140,12 +253,28 @@ class ExiobaseTradeFlow:
             # Create DataFrame and save
             if all_trade_factors:
                 trade_factors_df = pd.DataFrame(all_trade_factors)
-                output_file = get_file_path(self.config, 'trade_factors')
+                
+                # Determine output file based on mode
+                if self.use_large_factors:
+                    output_file = get_file_path(self.config, 'trade_factors')
+                    if not output_file.endswith('_lg.csv'):
+                        output_file = output_file.replace('.csv', '_lg.csv')
+                    file_type = "large"
+                    print(f"⚠️  WARNING: Creating large trade_factors_lg.csv (~1.5GB) - this may cause memory issues in trade_resources.py")
+                else:
+                    output_file = get_file_path(self.config, 'trade_factors')
+                    if output_file.endswith('_lg.csv'):
+                        output_file = output_file.replace('_lg.csv', '.csv')
+                    file_type = "small"
+                
                 trade_factors_df.to_csv(output_file, index=False)
-                print(f"Created trade_factors.csv with {len(trade_factors_df)} factor-trade relationships")
+                print(f"Created {file_type} trade_factors file with {len(trade_factors_df)} factor-trade relationships")
+                print(f"File: {output_file}")
             else:
                 print("No trade-factor relationships found, creating empty trade_factors.csv")
                 output_file = get_file_path(self.config, 'trade_factors')
+                if output_file.endswith('_lg.csv'):
+                    output_file = output_file.replace('_lg.csv', '.csv')
                 pd.DataFrame(columns=['trade_id', 'factor_id', 'coefficient', 'impact_value']).to_csv(output_file, index=False)
                 
         except Exception as e:
@@ -473,7 +602,20 @@ def main():
     """
     Main execution function
     """
-    analyzer = ExiobaseTradeFlow()
+    parser = argparse.ArgumentParser(description='Generate trade factors for Exiobase data')
+    parser.add_argument('-lag', '--large', action='store_true', 
+                       help='Generate large trade_factors_lg.csv with all factors (WARNING: ~1.5GB file, may cause memory issues)')
+    
+    args = parser.parse_args()
+    
+    if args.large:
+        print("🚀 Large factors mode enabled - generating comprehensive trade_factors_lg.csv")
+        print("⚠️  WARNING: This will create a ~1.5GB file that may cause FATAL ERROR in trade_resources.py")
+        print("   Node.js v8::ToLocalChecked Empty MaybeLocal error after ~10 minutes")
+        print("   Consider using the default small file mode instead")
+        print()
+    
+    analyzer = ExiobaseTradeFlow(use_large_factors=args.large)
     success = analyzer.run_analysis()
     
     if not success:

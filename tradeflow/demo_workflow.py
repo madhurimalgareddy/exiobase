@@ -67,7 +67,7 @@ def demo_workflow():
     print("1. Set TRADEFLOW in config.yaml to 'imports', 'exports', or 'domestic'")
     print("2. Run: python industry_tradeflow.py")
     print("3. Run: python create_trade_impacts.py")
-    print("4. Run: python create_trade_resources.py")
+    print("4. Run: python create_split_resources.py")
     print("Or use: python run_all_tradeflows.py (processes all types)")
 
 if __name__ == "__main__":
