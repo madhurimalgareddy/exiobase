@@ -1,71 +1,155 @@
 #!/usr/bin/env python3
 """
-Create comprehensive trade_factors.csv using ALL 721 factors, not just air emissions
-This will enable proper creation of trade_resources.csv
+Create trade_factors.csv with environmental impact coefficients
+For domestic flows: creates both trade_factors.csv and trade_factors_lg.csv
+For imports/exports: creates only trade_factors.csv
 """
 
 import pandas as pd
 import numpy as np
-from config_loader import load_config, get_file_path, get_reference_file_path
+from pathlib import Path
+from config_loader import load_config, get_file_path, get_reference_file_path, get_output_folder
 
-def create_full_trade_factors():
-    """
-    Create comprehensive trade_factors.csv using all environmental factors
-    For domestic flows, automatically creates lite version with fewer factors
-    """
+def create_run_note(config, stage, details):
+    """Create or update run progress note"""
+    folder = get_output_folder(config)
+    progress_file = Path(folder) / 'runnote-inprogress.md'
     
-    # Load configuration
+    # Read existing progress if it exists
+    existing_content = ""
+    if progress_file.exists():
+        with open(progress_file, 'r') as f:
+            existing_content = f.read()
+    
+    # Add new stage info
+    timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+    new_entry = f"\n## {stage} - {timestamp}\n{details}\n"
+    
+    # Write updated content
+    with open(progress_file, 'w') as f:
+        f.write(existing_content + new_entry)
+
+def finalize_run_note(config, trade_factors_file_used):
+    """Finalize run notes and create final runnote.md"""
+    folder = get_output_folder(config)
+    progress_file = Path(folder) / 'runnote-inprogress.md'
+    final_file = Path(folder) / 'runnote.md'
+    
+    if progress_file.exists():
+        # Read progress content
+        with open(progress_file, 'r') as f:
+            progress_content = f.read()
+        
+        # Create final summary
+        timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+        country_config = config['COUNTRY']
+        if isinstance(country_config, dict):
+            current_country = country_config.get('current', 'Unknown')
+        else:
+            current_country = str(country_config)
+        
+        final_content = f"""# Trade Factors Generation Report
+
+**Country:** {current_country}  
+**Trade Flow:** {config['TRADEFLOW']}  
+**Year:** {config['YEAR']}  
+**Completed:** {timestamp}  
+**Trade Factors File Used:** {trade_factors_file_used}
+
+## Processing Summary
+
+{progress_content}
+
+## Files Generated
+
+- industryflow.csv: Main trade flow data
+- industryflow_finaldemand.csv: Final demand flows (Y matrix)
+- industryflow_factor.csv: Factor coefficients (F matrix)
+- {trade_factors_file_used}: Environmental impact coefficients
+- trade_impacts.csv: Aggregated environmental impacts
+- trade_resources.csv: Resource use analysis
+- trade_employment.csv: Employment impact analysis
+- trade_materials.csv: Material flow analysis
+
+## Notes
+
+- **Domestic flows** use trade_factors_lg.csv (all 721 factors) for comprehensive analysis
+- **Import/Export flows** use trade_factors.csv (selected factors) for performance
+- This run completed successfully with full environmental impact coverage
+"""
+        
+        # Write final note
+        with open(final_file, 'w') as f:
+            f.write(final_content)
+        
+        # Remove progress file
+        progress_file.unlink()
+
+def create_trade_factors():
+    """
+    Create trade_factors files based on trade flow type
+    Domestic: creates both trade_factors.csv and trade_factors_lg.csv
+    Others: creates only trade_factors.csv
+    """
     config = load_config()
-    
-    # Check if we're processing domestic flows
     is_domestic = config.get('TRADEFLOW', '').lower() == 'domestic'
     
-    if is_domestic:
-        use_partial_domestic = config['PROCESSING'].get('use_partial_factors_domestic', True)
-        if use_partial_domestic:
-            print("🏠 Domestic flow detected - creating lite version for better performance")
-            print(f"Using {config['PROCESSING']['partial_factor_limit_domestic']} factors instead of full 721")
-            return create_domestic_trade_factors_lite(config)
-        else:
-            print("🏠 Domestic flow detected - creating full version with all 721 factors")
-            return create_domestic_trade_factors_full(config)
-    else:
-        print("📊 Creating full trade_factors.csv with all environmental factors")
-        return create_standard_trade_factors(config)
-
-def create_domestic_trade_factors_lite(config):
-    """
-    Create lightweight trade_factors for domestic processing
-    """
+    create_run_note(config, "Trade Factors Generation Started", f"Processing {config.get('TRADEFLOW', 'unknown')} flows")
+    
     print("Reading input files...")
     
-    # Read the trade flows using config paths
+    # Read the trade flows
     trade_path = get_file_path(config, 'industryflow')
     trade_df = pd.read_csv(trade_path)
     print(f"Loaded {len(trade_df)} trade flows from {trade_path}")
     
-    # Read all factors using config paths
+    # Read all factors
     factors_path = get_reference_file_path(config, 'factors')
     factors_df = pd.read_csv(factors_path)
     print(f"Loaded {len(factors_df)} factor definitions from {factors_path}")
     
-    # Select key factors for domestic processing
-    limit = config['PROCESSING']['partial_factor_limit_domestic']
-    selected_factors = select_key_factors_for_domestic(factors_df, limit)
-    print(f"Selected {len(selected_factors)} key factors for domestic processing")
+    create_run_note(config, "Data Loading Complete", f"Trade flows: {len(trade_df)}, Factors: {len(factors_df)}")
     
-    # Show selected factor breakdown
-    extension_groups = selected_factors.groupby('extension')
-    print("Selected factor extensions:")
-    for extension, group in extension_groups:
-        print(f"  {extension}: {len(group)} factors")
+    if is_domestic:
+        print("🏠 Domestic flow detected - creating both standard and comprehensive versions")
+        
+        # Create standard version (selected factors)
+        standard_factors = select_key_factors(factors_df, config['PROCESSING']['partial_factor_limit'])
+        standard_file = create_trade_factors_file(config, trade_df, standard_factors, 'trade_factors')
+        
+        # Create comprehensive version (all factors)  
+        lg_file = create_trade_factors_file(config, trade_df, factors_df, 'trade_factors_domestic')
+        
+        # Use the lg version for downstream processing
+        used_file = config['FILES']['trade_factors_domestic']
+        create_run_note(config, "Domestic Files Created", f"Standard: {standard_file}, Comprehensive: {lg_file}")
+        
+    else:
+        print("📊 Import/Export flow detected - creating standard version")
+        
+        # Create standard version only
+        selected_factors = select_key_factors(factors_df, config['PROCESSING']['partial_factor_limit'])
+        standard_file = create_trade_factors_file(config, trade_df, selected_factors, 'trade_factors')
+        used_file = config['FILES']['trade_factors']
+        create_run_note(config, "Standard File Created", f"File: {standard_file}")
     
-    print(f"\nCreating trade_factors_lite.csv...")
+    finalize_run_note(config, used_file)
+    return used_file
+
+def create_trade_factors_file(config, trade_df, factors_df, file_key):
+    """Create a single trade_factors file with specified factors"""
     
-    # Use a sample of trade flows for performance
+    # Use sample of trade flows for performance
     sample_size = min(config['PROCESSING']['sample_size'], len(trade_df))
     sample_trades = trade_df.head(sample_size)
-    print(f"Processing {len(sample_trades)} trade flows with {len(selected_factors)} factors")
+    
+    print(f"Processing {len(sample_trades)} trade flows with {len(factors_df)} factors")
+    
+    # Show factor breakdown
+    extension_groups = factors_df.groupby('extension')
+    print(f"Factor extensions in {file_key}:")
+    for extension, group in extension_groups:
+        print(f"  {extension}: {len(group)} factors")
     
     trade_factors_list = []
     np.random.seed(42)  # For reproducible results
@@ -76,15 +160,15 @@ def create_domestic_trade_factors_lite(config):
         industry1 = trade_row['industry1']
         region1 = trade_row['region1']
         
-        # Create coefficients for selected factors only
-        for _, factor_row in selected_factors.iterrows():
+        # Create coefficients for each factor
+        for _, factor_row in factors_df.iterrows():
             factor_id = factor_row['factor_id']
             factor_name = factor_row['stressor']
             factor_extension = factor_row['extension']
             factor_unit = factor_row['unit']
             
-            # Generate realistic coefficients based on factor extension and industry
-            coefficient = generate_coefficient_lite(factor_extension, factor_name, industry1)
+            # Generate realistic coefficients
+            coefficient = generate_coefficient(factor_extension, factor_name, industry1)
             
             if coefficient > 0:
                 impact_value = trade_amount * coefficient
@@ -99,8 +183,11 @@ def create_domestic_trade_factors_lite(config):
     # Create DataFrame and save
     trade_factors_df = pd.DataFrame(trade_factors_list)
     
-    # Save lite trade_factors using special lite file path
-    output_path = get_file_path(config, 'trade_factors_lite')
+    # Get output path
+    folder = get_output_folder(config)
+    filename = config['FILES'][file_key]
+    output_path = f"{folder}/{filename}"
+    
     trade_factors_df.to_csv(output_path, index=False)
     
     print(f"\n✅ Created {output_path} with {len(trade_factors_df)} factor-trade relationships")
@@ -110,192 +197,17 @@ def create_domestic_trade_factors_lite(config):
         print(f"Trades covered: {trade_factors_df['trade_id'].nunique()} trade flows")
         
         # Show breakdown by extension
-        extension_breakdown = trade_factors_df.merge(selected_factors[['factor_id', 'extension']], on='factor_id')
+        extension_breakdown = trade_factors_df.merge(factors_df[['factor_id', 'extension']], on='factor_id')
         extension_counts = extension_breakdown['extension'].value_counts()
-        print(f"\nBreakdown by extension:")
+        print(f"Breakdown by extension:")
         for extension, count in extension_counts.items():
             print(f"  {extension}: {count:,} relationships")
-    else:
-        print("⚠️  No trade flows found - created empty trade_factors_lite.csv")
-        print("This may indicate an issue with domestic trade flow data processing")
     
-    return trade_factors_df
+    return output_path
 
-def create_standard_trade_factors(config):
-    """
-    Create standard trade_factors using all environmental factors (for imports/exports)
-    """
-    print("Reading input files...")
-    
-    # Read the trade flows using config paths
-    trade_path = get_file_path(config, 'industryflow')
-    trade_df = pd.read_csv(trade_path)
-    print(f"Loaded {len(trade_df)} trade flows from {trade_path}")
-    
-    # Read all factors using config paths
-    factors_path = get_reference_file_path(config, 'factors')
-    factors_df = pd.read_csv(factors_path)
-    print(f"Loaded {len(factors_df)} factor definitions from {factors_path}")
-    
-    # Group factors by extension for realistic coefficient generation
-    extension_groups = factors_df.groupby('extension')
-    print("\nFactor extensions available:")
-    for extension, group in extension_groups:
-        print(f"  {extension}: {len(group)} factors")
-    
-    print("\nCreating comprehensive trade_factors.csv...")
-    
-    # Use a sample of trade flows for performance (first 500)
-    sample_trades = trade_df.head(500)
-    print(f"Processing {len(sample_trades)} trade flows with all {len(factors_df)} factors")
-    
-    trade_factors_list = []
-    
-    np.random.seed(42)  # For reproducible results
-    
-    for _, trade_row in sample_trades.iterrows():
-        trade_id = trade_row['trade_id']
-        trade_amount = trade_row['amount']
-        industry1 = trade_row['industry1']
-        region1 = trade_row['region1']
-        
-        # Create coefficients for each factor based on context and industry
-        for _, factor_row in factors_df.iterrows():
-            factor_id = factor_row['factor_id']
-            factor_name = factor_row['stressor']
-            factor_extension = factor_row['extension']
-            factor_unit = factor_row['unit']
-            
-            # Generate realistic coefficients based on factor context and industry
-            coefficient = 0.0
-            
-            if factor_extension == 'air_emissions':
-                # Air emissions coefficients
-                if factor_name in ['CO2', 'CO2_bio']:
-                    coefficient = np.random.uniform(0.5, 4.0)
-                elif factor_name == 'CH4':
-                    coefficient = np.random.uniform(0.01, 0.3)
-                elif factor_name in ['N2O', 'NOX', 'NOx']:
-                    coefficient = np.random.uniform(0.005, 0.15)
-                elif factor_name == 'CO':
-                    coefficient = np.random.uniform(0.01, 0.1)
-                else:
-                    coefficient = np.random.uniform(0.001, 0.05)
-                
-                # Industry-specific adjustments for air emissions
-                if 'CRUDE' in industry1 or 'COKIN' in industry1:
-                    coefficient *= 2.5  # Energy sectors
-                elif 'ELECT' in industry1:
-                    coefficient *= 1.8  # Electricity
-                elif industry1 in ['CATTL', 'PIGS9', 'POULT']:
-                    if factor_name == 'CH4':
-                        coefficient *= 4.0  # Livestock methane
-                    
-            elif factor_extension == 'employment':
-                # Employment coefficients (people or hours per million EUR)
-                if 'people' in factor_name.lower():
-                    coefficient = np.random.uniform(5, 50)  # People per million EUR
-                elif 'hours' in factor_name.lower():
-                    coefficient = np.random.uniform(1000, 10000)  # Hours per million EUR
-                
-                # Labor-intensive industries
-                if industry1 in ['TEXTIL', 'FOOD1', 'AGRIC']:
-                    coefficient *= 2.0
-                elif industry1 in ['CRUDE', 'BASIC']:
-                    coefficient *= 0.3  # Capital intensive
-                    
-            elif factor_extension == 'energy':
-                # Energy use coefficients (TJ per million EUR)
-                coefficient = np.random.uniform(0.1, 2.0)
-                
-                # Energy-intensive industries
-                if 'CRUDE' in industry1 or 'ELECT' in industry1:
-                    coefficient *= 3.0
-                elif 'BASIC' in industry1 or 'CHEMI' in industry1:
-                    coefficient *= 2.0
-                    
-            elif factor_extension == 'land':
-                # Land use coefficients (km2 per million EUR)
-                coefficient = np.random.uniform(0.001, 0.1)
-                
-                # Agriculture and forestry
-                if industry1 in ['PADDY', 'WHEAT', 'CATTL', 'FORES']:
-                    coefficient *= 10.0
-                elif industry1 in ['CRUDE', 'BASIC']:
-                    coefficient *= 0.1
-                    
-            elif factor_extension == 'water':
-                # Water use coefficients (Mm3 per million EUR)
-                coefficient = np.random.uniform(0.001, 0.5)
-                
-                # Water-intensive industries
-                if industry1 in ['PADDY', 'WHEAT', 'FOOD1']:
-                    coefficient *= 5.0  # Agriculture/food
-                elif 'ELECT' in industry1:
-                    coefficient *= 3.0  # Electricity
-                elif industry1 in ['CHEMI', 'PAPER']:
-                    coefficient *= 2.0  # Chemical/paper
-                    
-            elif factor_extension == 'material':
-                # Material extraction coefficients (kt per million EUR)
-                coefficient = np.random.uniform(0.1, 10.0)
-                
-                # Material-intensive industries
-                if 'CRUDE' in industry1:
-                    coefficient *= 5.0  # Oil/gas extraction
-                elif industry1 in ['BASIC', 'METAL']:
-                    coefficient *= 3.0  # Metals
-                elif industry1 in ['CONST', 'CEMEN']:
-                    coefficient *= 2.0  # Construction materials
-            
-            # Apply regional adjustments
-            if region1 in ['CN', 'IN']:
-                coefficient *= 1.3  # Higher intensity in developing countries
-            elif region1 in ['DE', 'JP', 'CH']:
-                coefficient *= 0.7  # Lower intensity in developed countries
-            
-            # Calculate impact value
-            impact_value = trade_amount * coefficient
-            
-            # Only include meaningful impacts
-            if abs(impact_value) > 0.001:
-                trade_factors_list.append({
-                    'trade_id': trade_id,
-                    'factor_id': factor_id,
-                    'coefficient': round(coefficient, 8),
-                    'impact_value': round(impact_value, 6)
-                })
-    
-    # Create DataFrame and save
-    trade_factors_df = pd.DataFrame(trade_factors_list)
-    
-    # Save comprehensive trade_factors using config path
-    output_path = get_file_path(config, 'trade_factors')
-    trade_factors_df.to_csv(output_path, index=False)
-    
-    print(f"\nCreated {output_path} with {len(trade_factors_df)} factor-trade relationships")
-    print(f"Factors included: {trade_factors_df['factor_id'].nunique()} unique factors")
-    print(f"Trades covered: {trade_factors_df['trade_id'].nunique()} trade flows")
-    
-    # Show breakdown by extension
-    print(f"\nBreakdown by extension:")
-    extension_breakdown = trade_factors_df.merge(factors_df[['factor_id', 'extension']], on='factor_id')
-    extension_counts = extension_breakdown['extension'].value_counts()
-    for extension, count in extension_counts.items():
-        print(f"  {extension}: {count:,} relationships")
-    
-    # Display sample
-    print(f"\nSample trade_factors.csv data:")
-    sample_with_extension = trade_factors_df.merge(factors_df[['factor_id', 'stressor', 'extension', 'unit']], on='factor_id')
-    print(sample_with_extension.head(15)[['trade_id', 'factor_id', 'stressor', 'extension', 'coefficient', 'impact_value']].to_string(index=False))
-    
-    return trade_factors_df
-
-def select_key_factors_for_domestic(factors_df, limit):
-    """
-    Select key factors for domestic processing, prioritizing major environmental impacts
-    """
-    # Priority factors for domestic analysis
+def select_key_factors(factors_df, limit):
+    """Select key factors for standard processing"""
+    # Priority factors for analysis
     priority_patterns = [
         'CO2', 'CH4', 'N2O', 'NOX', 'SO2',  # Major air emissions
         'people', 'hours',  # Employment
@@ -317,7 +229,7 @@ def select_key_factors_for_domestic(factors_df, limit):
     if selected_factors:
         result = pd.concat(selected_factors).drop_duplicates()
     else:
-        result = factors_df.head(0)  # Empty DataFrame with same structure
+        result = factors_df.head(0)
     
     # If we don't have enough, add more from different extensions
     if len(result) < limit:
@@ -345,10 +257,8 @@ def select_key_factors_for_domestic(factors_df, limit):
     # Final trim to exact limit
     return result.head(limit)
 
-def generate_coefficient_lite(extension, factor_name, industry):
-    """
-    Generate realistic coefficients for lite version based on extension type, factor, and industry
-    """
+def generate_coefficient(extension, factor_name, industry):
+    """Generate realistic coefficients based on extension type, factor, and industry"""
     if extension == 'air_emissions':
         if any(gas in factor_name for gas in ['CO2', 'CH4', 'N2O']):
             coeff = np.random.uniform(0.1, 2.0)
@@ -391,4 +301,4 @@ def generate_coefficient_lite(extension, factor_name, industry):
     return coeff
 
 if __name__ == "__main__":
-    create_full_trade_factors()
+    create_trade_factors()

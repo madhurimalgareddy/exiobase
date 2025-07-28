@@ -69,9 +69,26 @@ def get_output_folder(config, tradeflow_type=None):
 def get_file_path(config, file_key, tradeflow_type=None):
     """
     Get full file path for a given file key
+    Special handling for trade_factors in domestic vs non-domestic flows
     """
     folder = get_output_folder(config, tradeflow_type)
-    filename = config['FILES'][file_key]
+    
+    # Special handling for trade_factors
+    if file_key == 'trade_factors':
+        current_tradeflow = tradeflow_type or config.get('TRADEFLOW', '')
+        if current_tradeflow.lower() == 'domestic':
+            # For domestic flows, check if _lg version exists, otherwise use regular
+            lg_path = f"{folder}/{config['FILES']['trade_factors_domestic']}"
+            regular_path = f"{folder}/{config['FILES']['trade_factors']}"
+            
+            if Path(lg_path).exists():
+                filename = config['FILES']['trade_factors_domestic']
+            else:
+                filename = config['FILES']['trade_factors']
+        else:
+            filename = config['FILES'][file_key]
+    else:
+        filename = config['FILES'][file_key]
     
     # Ensure folder exists
     Path(folder).mkdir(parents=True, exist_ok=True)
