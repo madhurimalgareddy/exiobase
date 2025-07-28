@@ -45,8 +45,8 @@ def get_output_folder(config, tradeflow_type=None):
         tradeflow_type = config['TRADEFLOW']
     
     folder_path = config['FOLDERS'][tradeflow_type]
-    # Substitute year placeholder
-    return folder_path.format(year=config['YEAR'])
+    # Substitute year and country placeholders
+    return folder_path.format(year=config['YEAR'], country=config['COUNTRY'])
 
 def get_file_path(config, file_key, tradeflow_type=None):
     """

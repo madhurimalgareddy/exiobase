@@ -2,12 +2,12 @@
 # Trade flow type: 'imports', 'exports', or 'domestic'
 TRADEFLOW: exports
 YEAR: 2019
-COUNTRY: US
+COUNTRY: IN
 FOLDERS:
   base: "year/{year}"
-  imports: "year/{year}/US/imports"
-  exports: "year/{year}/US/exports"
-  domestic: "year/{year}/US/domestic"
+  imports: "year/{year}/{country}/imports"
+  exports: "year/{year}/{country}/exports"
+  domestic: "year/{year}/{country}/domestic"
 FILES:
   factors: factors.csv
   industries: industries.csv
