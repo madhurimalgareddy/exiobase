@@ -18,7 +18,7 @@ def create_trade_impacts():
     print("Reading input files...")
     
     # Read the trade flows
-    trade_file = get_file_path(config, 'industry_tradeflow')
+    trade_file = get_file_path(config, 'industryflow')
     trade_df = pd.read_csv(trade_file)
     print(f"Loaded {len(trade_df)} trade flows")
     
@@ -27,7 +27,7 @@ def create_trade_impacts():
     trade_factors_df = pd.read_csv(trade_factors_file)
     print(f"Loaded {len(trade_factors_df)} trade-factor relationships")
     
-    # Read the factors metadata for units and context
+    # Read the factors metadata for units and extension
     factors_file = get_reference_file_path(config, 'factors')
     factors_df = pd.read_csv(factors_file)
     print(f"Loaded {len(factors_df)} factor definitions")
@@ -35,7 +35,7 @@ def create_trade_impacts():
     # Merge trade_factors with factor metadata
     print("Merging trade factors with metadata...")
     enhanced_factors = trade_factors_df.merge(
-        factors_df[['factor_id', 'unit', 'context', 'name']], 
+        factors_df[['factor_id', 'unit', 'extension', 'stressor']], 
         on='factor_id', 
         how='left'
     )
@@ -52,11 +52,11 @@ def create_trade_impacts():
     impact_summary.columns = ['total_impact_value', 'factor_count', 'unique_factors']
     impact_summary = impact_summary.reset_index()
     
-    # Calculate impact by context (emission/air, natural_resource/water, etc.)
-    print("Calculating impacts by environmental context...")
+    # Calculate impact by extension (air_emissions, water, etc.)
+    print("Calculating impacts by environmental extension...")
     
-    context_impacts = enhanced_factors.groupby(['trade_id', 'context'])['impact_value'].sum().unstack(fill_value=0)
-    context_impacts = context_impacts.round(3)
+    extension_impacts = enhanced_factors.groupby(['trade_id', 'extension'])['impact_value'].sum().unstack(fill_value=0)
+    extension_impacts = extension_impacts.round(3)
     
     # Calculate impact by major factor types
     print("Calculating impacts by major factor types...")
@@ -78,7 +78,7 @@ def create_trade_impacts():
     for factor_type, factor_names in major_factors.items():
         # Find factors that contain any of the specified names
         matching_factors = enhanced_factors[
-            enhanced_factors['name'].str.contains('|'.join(factor_names), case=False, na=False)
+            enhanced_factors['stressor'].str.contains('|'.join(factor_names), case=False, na=False)
         ]
         
         if not matching_factors.empty:
@@ -92,10 +92,10 @@ def create_trade_impacts():
     
     trade_impacts = trade_df.merge(impact_summary, on='trade_id', how='left')
     
-    # Add context-based impacts
-    if not context_impacts.empty:
+    # Add extension-based impacts
+    if not extension_impacts.empty:
         trade_impacts = trade_impacts.merge(
-            context_impacts.reset_index(), 
+            extension_impacts.reset_index(), 
             on='trade_id', 
             how='left'
         )
@@ -139,11 +139,11 @@ def create_trade_impacts():
     print(top_impacts.to_string(index=False))
     
     print(f"\nContext breakdown (sum of all impacts):")
-    context_cols = [col for col in trade_impacts.columns if col.startswith(('emission/', 'natural_resource/', 'economic/'))]
-    if context_cols:
-        context_summary = trade_impacts[context_cols].sum().sort_values(ascending=False)
-        for context, value in context_summary.head(10).items():
-            print(f"  {context}: {value:,.0f}")
+    extension_cols = [col for col in trade_impacts.columns if col in ['air_emissions', 'water', 'land', 'material', 'energy', 'employment']]
+    if extension_cols:
+        extension_summary = trade_impacts[extension_cols].sum().sort_values(ascending=False)
+        for extension, value in extension_summary.head(10).items():
+            print(f"  {extension}: {value:,.0f}")
     
     print(f"\nMajor factor type breakdown:")
     factor_type_cols = [col for col in trade_impacts.columns if col.endswith('_total')]

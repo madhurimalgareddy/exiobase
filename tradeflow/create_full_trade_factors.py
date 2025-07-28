@@ -6,27 +6,33 @@ This will enable proper creation of trade_resources.csv
 
 import pandas as pd
 import numpy as np
+from config_loader import load_config, get_file_path, get_reference_file_path
 
 def create_full_trade_factors():
     """
     Create comprehensive trade_factors.csv using all environmental factors
     """
     
+    # Load configuration
+    config = load_config()
+    
     print("Reading input files...")
     
-    # Read the trade flows
-    trade_df = pd.read_csv('csv/industry_tradeflow.csv')
-    print(f"Loaded {len(trade_df)} trade flows")
+    # Read the trade flows using config paths
+    trade_path = get_file_path(config, 'industryflow')
+    trade_df = pd.read_csv(trade_path)
+    print(f"Loaded {len(trade_df)} trade flows from {trade_path}")
     
-    # Read all factors
-    factors_df = pd.read_csv('csv/factors.csv')
-    print(f"Loaded {len(factors_df)} factor definitions")
+    # Read all factors using config paths
+    factors_path = get_reference_file_path(config, 'factors')
+    factors_df = pd.read_csv(factors_path)
+    print(f"Loaded {len(factors_df)} factor definitions from {factors_path}")
     
-    # Group factors by context for realistic coefficient generation
-    context_groups = factors_df.groupby('context')
-    print("\nFactor contexts available:")
-    for context, group in context_groups:
-        print(f"  {context}: {len(group)} factors")
+    # Group factors by extension for realistic coefficient generation
+    extension_groups = factors_df.groupby('extension')
+    print("\nFactor extensions available:")
+    for extension, group in extension_groups:
+        print(f"  {extension}: {len(group)} factors")
     
     print("\nCreating comprehensive trade_factors.csv...")
     
@@ -47,14 +53,14 @@ def create_full_trade_factors():
         # Create coefficients for each factor based on context and industry
         for _, factor_row in factors_df.iterrows():
             factor_id = factor_row['factor_id']
-            factor_name = factor_row['name']
-            factor_context = factor_row['context']
+            factor_name = factor_row['stressor']
+            factor_extension = factor_row['extension']
             factor_unit = factor_row['unit']
             
             # Generate realistic coefficients based on factor context and industry
             coefficient = 0.0
             
-            if factor_context == 'emission/air':
+            if factor_extension == 'air_emissions':
                 # Air emissions coefficients
                 if factor_name in ['CO2', 'CO2_bio']:
                     coefficient = np.random.uniform(0.5, 4.0)
@@ -76,7 +82,7 @@ def create_full_trade_factors():
                     if factor_name == 'CH4':
                         coefficient *= 4.0  # Livestock methane
                     
-            elif factor_context == 'economic/employment':
+            elif factor_extension == 'employment':
                 # Employment coefficients (people or hours per million EUR)
                 if 'people' in factor_name.lower():
                     coefficient = np.random.uniform(5, 50)  # People per million EUR
@@ -89,7 +95,7 @@ def create_full_trade_factors():
                 elif industry1 in ['CRUDE', 'BASIC']:
                     coefficient *= 0.3  # Capital intensive
                     
-            elif factor_context == 'natural_resource/energy':
+            elif factor_extension == 'energy':
                 # Energy use coefficients (TJ per million EUR)
                 coefficient = np.random.uniform(0.1, 2.0)
                 
@@ -99,7 +105,7 @@ def create_full_trade_factors():
                 elif 'BASIC' in industry1 or 'CHEMI' in industry1:
                     coefficient *= 2.0
                     
-            elif factor_context == 'natural_resource/land':
+            elif factor_extension == 'land':
                 # Land use coefficients (km2 per million EUR)
                 coefficient = np.random.uniform(0.001, 0.1)
                 
@@ -109,7 +115,7 @@ def create_full_trade_factors():
                 elif industry1 in ['CRUDE', 'BASIC']:
                     coefficient *= 0.1
                     
-            elif factor_context == 'natural_resource/water' or factor_context == 'emission/water':
+            elif factor_extension == 'water':
                 # Water use coefficients (Mm3 per million EUR)
                 coefficient = np.random.uniform(0.001, 0.5)
                 
@@ -121,7 +127,7 @@ def create_full_trade_factors():
                 elif industry1 in ['CHEMI', 'PAPER']:
                     coefficient *= 2.0  # Chemical/paper
                     
-            elif factor_context == 'natural_resource/in_ground':
+            elif factor_extension == 'material':
                 # Material extraction coefficients (kt per million EUR)
                 coefficient = np.random.uniform(0.1, 10.0)
                 
@@ -154,24 +160,25 @@ def create_full_trade_factors():
     # Create DataFrame and save
     trade_factors_df = pd.DataFrame(trade_factors_list)
     
-    # Save comprehensive trade_factors
-    trade_factors_df.to_csv('csv/trade_factors.csv', index=False)
+    # Save comprehensive trade_factors using config path
+    output_path = get_file_path(config, 'trade_factors')
+    trade_factors_df.to_csv(output_path, index=False)
     
-    print(f"\nCreated trade_factors.csv with {len(trade_factors_df)} factor-trade relationships")
+    print(f"\nCreated {output_path} with {len(trade_factors_df)} factor-trade relationships")
     print(f"Factors included: {trade_factors_df['factor_id'].nunique()} unique factors")
     print(f"Trades covered: {trade_factors_df['trade_id'].nunique()} trade flows")
     
-    # Show breakdown by context
-    print(f"\nBreakdown by context:")
-    context_breakdown = trade_factors_df.merge(factors_df[['factor_id', 'context']], on='factor_id')
-    context_counts = context_breakdown['context'].value_counts()
-    for context, count in context_counts.items():
-        print(f"  {context}: {count:,} relationships")
+    # Show breakdown by extension
+    print(f"\nBreakdown by extension:")
+    extension_breakdown = trade_factors_df.merge(factors_df[['factor_id', 'extension']], on='factor_id')
+    extension_counts = extension_breakdown['extension'].value_counts()
+    for extension, count in extension_counts.items():
+        print(f"  {extension}: {count:,} relationships")
     
     # Display sample
     print(f"\nSample trade_factors.csv data:")
-    sample_with_context = trade_factors_df.merge(factors_df[['factor_id', 'name', 'context', 'unit']], on='factor_id')
-    print(sample_with_context.head(15)[['trade_id', 'factor_id', 'name', 'context', 'coefficient', 'impact_value']].to_string(index=False))
+    sample_with_extension = trade_factors_df.merge(factors_df[['factor_id', 'stressor', 'extension', 'unit']], on='factor_id')
+    print(sample_with_extension.head(15)[['trade_id', 'factor_id', 'stressor', 'extension', 'coefficient', 'impact_value']].to_string(index=False))
     
     return trade_factors_df
 

@@ -541,8 +541,11 @@ class ExiobaseTradeFlow:
         """
         print(f"Exporting data to {self.output_file}...")
         
-        # Ensure we have the correct column order
-        columns = ['year', 'region1', 'region2', 'industry1', 'industry2', 'amount']
+        # Ensure we have the correct column order including trade_id
+        if 'trade_id' in df.columns:
+            columns = ['trade_id', 'year', 'region1', 'region2', 'industry1', 'industry2', 'amount']
+        else:
+            columns = ['year', 'region1', 'region2', 'industry1', 'industry2', 'amount']
         df = df[columns]
         
         # Export to CSV
