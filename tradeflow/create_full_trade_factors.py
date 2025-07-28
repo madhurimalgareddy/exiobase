@@ -21,9 +21,14 @@ def create_full_trade_factors():
     is_domestic = config.get('TRADEFLOW', '').lower() == 'domestic'
     
     if is_domestic:
-        print("🏠 Domestic flow detected - creating lite version for better performance")
-        print(f"Using {config['PROCESSING']['partial_factor_limit_domestic']} factors instead of full 721")
-        return create_domestic_trade_factors_lite(config)
+        use_partial_domestic = config['PROCESSING'].get('use_partial_factors_domestic', True)
+        if use_partial_domestic:
+            print("🏠 Domestic flow detected - creating lite version for better performance")
+            print(f"Using {config['PROCESSING']['partial_factor_limit_domestic']} factors instead of full 721")
+            return create_domestic_trade_factors_lite(config)
+        else:
+            print("🏠 Domestic flow detected - creating full version with all 721 factors")
+            return create_domestic_trade_factors_full(config)
     else:
         print("📊 Creating full trade_factors.csv with all environmental factors")
         return create_standard_trade_factors(config)
