@@ -48,7 +48,26 @@ class ExiobaseTradeFlow:
         print_config_summary(self.config)
         
         self.year = self.config['YEAR']
-        self.country = self.config['COUNTRY']
+        
+        # Handle COUNTRY as either string or dict with current sub-parameter
+        country_config = self.config['COUNTRY']
+        if isinstance(country_config, dict):
+            if 'current' in country_config:
+                self.country = country_config['current']
+            elif 'list' in country_config:
+                # If no current is set, use first from list
+                country_list = country_config['list'].split(',')
+                self.country = country_list[0].strip()
+            else:
+                self.country = str(country_config)
+        elif isinstance(country_config, str):
+            if ',' in country_config:
+                self.country = country_config.split(',')[0].strip()
+            else:
+                self.country = country_config
+        else:
+            self.country = str(country_config)
+            
         self.tradeflow_type = self.config['TRADEFLOW']
         self.output_file = get_file_path(self.config, 'industryflow')
         self.model_type = 'pxp'  # product by product matrix
@@ -389,16 +408,32 @@ class ExiobaseTradeFlow:
             print(f"Processing exports from {self.country}")
         elif self.tradeflow_type == 'domestic':
             # Filter for flows within the country (domestic)
-            Z_filtered = Z_stacked[
+            domestic_candidates = Z_stacked[
                 (Z_stacked['from_region'] == self.country) & 
                 (Z_stacked['to_region'] == self.country)
             ].copy()
+            
             print(f"Processing domestic flows within {self.country}")
+            print(f"Found {len(domestic_candidates)} potential domestic flows")
+            print(f"Non-zero flows: {len(domestic_candidates[domestic_candidates['flow'] > 0])}")
+            print(f"Flows > 0.001: {len(domestic_candidates[domestic_candidates['flow'] > 0.001])}")
+            print(f"Flows > 0.01: {len(domestic_candidates[domestic_candidates['flow'] > 0.01])}")
+            
+            if len(domestic_candidates) > 0:
+                print(f"Flow range: {domestic_candidates['flow'].min():.6f} to {domestic_candidates['flow'].max():.2f}")
+            
+            Z_filtered = domestic_candidates
         else:
             raise ValueError(f"Invalid tradeflow type: {self.tradeflow_type}")
         
-        # Filter out zero or very small flows
-        Z_filtered = Z_filtered[Z_filtered['flow'] > 0.01].copy()
+        # Filter out zero or very small flows (lowered threshold for domestic)
+        initial_count = len(Z_filtered)
+        if self.tradeflow_type == 'domestic':
+            # Use lower threshold for domestic flows
+            Z_filtered = Z_filtered[Z_filtered['flow'] > 0.001].copy()
+            print(f"After filtering flows > 0.001: {len(Z_filtered)} flows (removed {initial_count - len(Z_filtered)})")
+        else:
+            Z_filtered = Z_filtered[Z_filtered['flow'] > 0.01].copy()
         
         # Map sector names to 5-character industry IDs
         Z_filtered['industry1'] = Z_filtered['from_sector'].map(self.sector_mapping)
