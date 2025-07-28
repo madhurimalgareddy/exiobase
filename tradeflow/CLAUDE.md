@@ -112,6 +112,7 @@ python update_current_country.py CN
 - **All countries**: `COUNTRY: {list: "all"}` - Auto-discovers existing country folders
 - **Default set**: `COUNTRY: {list: "default"}` - Uses predefined 12-country set
 - **Auto-population**: Missing `current` field automatically populated during processing
+- **Auto-cleanup**: `current` field automatically removed when batch processing completes
 
 ### Trade Flow Types
 - **imports**: Flows TO the country (from other countries)

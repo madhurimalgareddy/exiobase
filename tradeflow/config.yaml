@@ -2,7 +2,6 @@ TRADEFLOW: domestic
 YEAR: 2019
 COUNTRY:
   list: CN,DE
-  current: CN
 FOLDERS:
   base: year/{year}
   imports: year/{year}/{country}/imports
