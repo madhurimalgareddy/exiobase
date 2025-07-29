@@ -1,7 +1,7 @@
 TRADEFLOW: domestic
 YEAR: 2019
 COUNTRY:
-  list: CN,DE
+  list: all
 FOLDERS:
   base: year/{year}
   imports: year/{year}/{country}/imports
