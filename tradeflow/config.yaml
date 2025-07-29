@@ -1,8 +1,7 @@
 TRADEFLOW: domestic
 YEAR: 2019
 COUNTRY:
-  list: all
-  current: CA
+  list: US # all = rerun all  # default = run incomplete within AU, BR, CA, CN, DE, FR, GB, IN, IT, JP, KR, US
 FOLDERS:
   base: year/{year}
   imports: year/{year}/{country}/imports

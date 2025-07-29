@@ -3,19 +3,19 @@
 **Country:** BR  
 **Trade Flow:** domestic  
 **Year:** 2019  
-**Completed:** 2025-07-29 00:03:08  
+**Completed:** 2025-07-29 07:25:03  
 **Trade Factors File Used:** trade_factors_lg.csv
 
 ## Processing Summary
 
 
-## Trade Factors Generation Started - 2025-07-29 00:01:48
+## Trade Factors Generation Started - 2025-07-29 07:23:39
 Processing domestic flows
 
-## Data Loading Complete - 2025-07-29 00:01:48
+## Data Loading Complete - 2025-07-29 07:23:39
 Trade flows: 19492, Factors: 721
 
-## Domestic Files Created - 2025-07-29 00:03:08
+## Domestic Files Created - 2025-07-29 07:25:03
 Standard: year/2019/BR/domestic/trade_factors.csv, Comprehensive: year/2019/BR/domestic/trade_factors_lg.csv
 
 
