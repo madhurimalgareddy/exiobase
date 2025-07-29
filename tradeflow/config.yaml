@@ -2,6 +2,7 @@ TRADEFLOW: domestic
 YEAR: 2019
 COUNTRY:
   list: all
+  current: CA
 FOLDERS:
   base: year/{year}
   imports: year/{year}/{country}/imports
