@@ -1,0 +1,28 @@
+TRADEFLOW: domestic
+YEAR: 2019
+COUNTRY:
+  list: US # all = rerun all  # default = run incomplete within AU, BR, CA, CN, DE, FR, GB, IN, IT, JP, KR, US
+FOLDERS:
+  base: year/{year}
+  imports: year/{year}/{country}/imports
+  exports: year/{year}/{country}/exports
+  domestic: year/{year}/{country}/domestic
+FILES:
+  factors: factors.csv
+  industries: industries.csv
+  industryflow: industryflow.csv
+  industryflow_finaldemand: industryflow_finaldemand.csv
+  industryflow_factor: industryflow_factor.csv
+  trade_factors: trade_factors.csv
+  trade_factors_domestic: trade_factors_lg.csv
+  trade_impacts: trade_impacts.csv
+  trade_employment: trade_employment.csv
+  trade_resources: trade_resources.csv
+  trade_materials: trade_materials.csv
+PROCESSING:
+  sample_size: 1000
+  min_impact_threshold: 0.001
+  use_partial_factors: true
+  partial_factor_limit: 120
+  use_partial_factors_domestic: false
+  partial_factor_limit_domestic: 2000
