@@ -133,14 +133,14 @@ class FactorInputExtractor:
         factor_data['year'] = self.year
         
         # Add flow_id column (1-based sequential ID) - same as other scripts
-        factor_data = factor_data.reset_index(drop=True)
-        factor_data['flow_id'] = factor_data.index + 1
+        ## factor_data = factor_data.reset_index(drop=True)
+        ## factor_data['flow_id'] = factor_data.index + 1
         
         # Add flow type indicator
         factor_data['flow_type'] = 'factor_input'
         
         # Reorder columns (adapted from other scripts' column order)
-        factor_data = factor_data[['flow_id', 'year', 'region', 'sector', 'industry', 'factor_name', 'coefficient', 'flow_type', 'extension_type']]
+        factor_data = factor_data[['factor_id', 'year', 'region', 'sector', 'industry', 'factor_name', 'coefficient', 'flow_type', 'extension_type']]
         
         return factor_data
 
