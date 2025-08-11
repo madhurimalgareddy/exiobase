@@ -13,12 +13,12 @@ FILES:
   industryflow: industryflow.csv
   industryflow_finaldemand: industryflow_finaldemand.csv
   industryflow_factor: industryflow_factor.csv
-  trade_factors: trade_factors.csv
-  trade_factors_domestic: trade_factors_lg.csv
-  trade_impacts: trade_impacts.csv
+  trade_factor: trade_factor.csv
+  trade_factor_domestic: trade_factor_lg.csv
+  trade_impact: trade_impact.csv
+  trade_resource: trade_resource.csv
+  trade_material: trade_material.csv
   trade_employment: trade_employment.csv
-  trade_resources: trade_resources.csv
-  trade_materials: trade_materials.csv
 PROCESSING:
   sample_size: 1000
   min_impact_threshold: 0.001
