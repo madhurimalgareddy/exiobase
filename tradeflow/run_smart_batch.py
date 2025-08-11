@@ -127,7 +127,7 @@ def remove_config_key(key_path):
         with open(config_path, 'w') as f:
             yaml.dump(config, f, default_flow_style=False, sort_keys=False)
 
-def run_country_processing(country, tradeflow, batch_start_time, batch_timeout=18000):
+def run_country_processing(country, tradeflow, batch_start_time, batch_timeout=18000, country_timeout=3600):
     """Run complete processing for a single country with timing and batch timeout check"""
     # Check if batch timeout exceeded before starting country
     elapsed_batch_time = time.time() - batch_start_time
@@ -154,14 +154,22 @@ def run_country_processing(country, tradeflow, batch_start_time, batch_timeout=1
     
     success_count = 0
     for i, script in enumerate(scripts, 1):
-        # Check batch timeout before each script
+        # Check both batch and country timeouts before each script
         elapsed_batch_time = time.time() - batch_start_time
+        elapsed_country_time = time.time() - start_time
+        
         if elapsed_batch_time >= batch_timeout:
             print(f"⏰ BATCH TIMEOUT: {elapsed_batch_time/3600:.1f} hours elapsed, stopping at {script}")
             break
             
+        if elapsed_country_time >= country_timeout:
+            print(f"⏰ COUNTRY TIMEOUT: {elapsed_country_time/60:.1f} minutes elapsed for {country}, stopping at {script}")
+            break
+            
         script_start = time.time()
+        remaining_country_time = (country_timeout - elapsed_country_time) / 60
         print(f"\n▶️  [{i}/{len(scripts)}] Running {script} for {country}...")
+        print(f"   ⏱️  Country time remaining: {remaining_country_time:.1f} minutes")
         
         try:
             result = subprocess.run([
@@ -199,16 +207,31 @@ def run_country_processing(country, tradeflow, batch_start_time, batch_timeout=1
     minutes = int(total_time // 60)
     seconds = int(total_time % 60)
     
-    print(f"\n{'='*60}")
+    # Enhanced completion feedback
+    print(f"\n{'='*80}")
     print(f"🎯 {country} {tradeflow.upper()} PROCESSING COMPLETE")
-    print(f"{'='*60}")
-    print(f"⏱️  Total time: {minutes}m {seconds}s")
+    print(f"{'='*80}")
+    print(f"⏱️  Total country time: {minutes}m {seconds}s (limit: {country_timeout/60:.0f} minutes)")
     print(f"✅ Scripts completed: {success_count}/{len(scripts)}")
     
+    # Show completion percentage
+    completion_pct = (success_count / len(scripts)) * 100
+    print(f"📊 Completion rate: {completion_pct:.1f}%")
+    
+    # Enhanced status message
     if success_count == len(scripts):
-        print(f"🎉 {country} {tradeflow} processing fully successful!")
+        print(f"🎉 {country} {tradeflow} processing FULLY SUCCESSFUL!")
+        print(f"📁 Generated: trade_factors.csv + trade_factors_lg.csv (721 factors)")
     else:
-        print(f"⚠️  {country} {tradeflow} processing partially completed")
+        print(f"⚠️  {country} {tradeflow} processing PARTIALLY COMPLETED ({success_count}/{len(scripts)} scripts)")
+        if total_time >= country_timeout * 0.9:
+            print(f"⏰ Country approached time limit: {total_time/60:.1f}/{country_timeout/60:.0f} minutes")
+    
+    # Time efficiency feedback
+    if total_time < 300:  # Less than 5 minutes
+        print(f"🚀 Fast processing - completed in under 5 minutes!")
+    elif total_time > 600:  # More than 10 minutes  
+        print(f"🐌 Slower processing - took over 10 minutes")
     
     return success_count == len(scripts)
 
@@ -241,6 +264,8 @@ def main():
     
     batch_start = time.time()
     batch_timeout = 18000  # 5 hours in seconds
+    country_timeout = 3600  # 1 hour per country (60 minutes)
+    print(f"⏰ Per-country time limit: {country_timeout/60:.0f} minutes")
     results = {}
     
     # Initialize results for completed countries as successful
@@ -264,7 +289,7 @@ def main():
         print(f"⏰ Batch time remaining: {remaining_time:.1f} hours")
         print(f"{'🔄' * 20}")
         
-        country_success = run_country_processing(country, tradeflow, batch_start, batch_timeout)
+        country_success = run_country_processing(country, tradeflow, batch_start, batch_timeout, country_timeout)
         results[country] = country_success
         
         # If country processing was stopped due to batch timeout, break
