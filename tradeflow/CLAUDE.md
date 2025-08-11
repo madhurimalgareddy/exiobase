@@ -151,8 +151,30 @@ python update_current_country.py CN
 - **Domestic flows**: All 721 factors (comprehensive analysis feasible)
 - **International flows**: 120 selected factors (performance-optimized)
 - **Smart file selection**: Automatic `_lg` vs standard file detection
-- **Batch processing**: 20-minute timeout per country with automatic progression
+- **Batch processing**: Multi-level timeout protection with automatic progression
 - **Memory management**: Chunked processing for large datasets
+- **Resume functionality**: Automatically skips already completed countries
+
+## Timeout Configuration
+
+The system implements a three-tier timeout hierarchy for robust processing management:
+
+1. **Script timeout**: 20 minutes per individual script
+   - Prevents any single script from hanging indefinitely
+   - Applies to each of the 6 processing scripts per country
+   - Most granular level of timeout protection
+
+2. **Country timeout**: 60 minutes per country total
+   - Limits total processing time for all scripts in a single country
+   - Provides real-time countdown: "Country time remaining: X.X minutes"
+   - Prevents any country from consuming excessive batch time
+
+3. **Batch timeout**: 5 hours for entire batch
+   - Overall time limit for processing all countries in the list
+   - Shows remaining batch time: "Batch time remaining: X.X hours"
+   - Most restrictive timeout - will stop processing when reached
+
+**Timeout Priority**: The most restrictive timeout wins. If any timeout is exceeded, processing stops gracefully with clear status reporting.
 
 ## Best Practices
 
