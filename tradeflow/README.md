@@ -1,6 +1,6 @@
 # Primary tables: <span style="color:#aaa">trade, factor, industry</span>
 
-Table naming designed for 3rd graders:
+Table naming designed for 3rd graders. [View output tables](https://github.com/ModelEarth/trade-data/tree/main/year)
 
 **The trade_id field** in trade.csv relates 5 values (year, region1, region2, industry1, industry2) to multiple impact factors for each trade row.
 
