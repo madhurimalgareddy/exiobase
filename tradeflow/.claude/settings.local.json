@@ -6,7 +6,8 @@
       "Bash(python:*)",
       "Bash(ls:*)",
       "Bash(cut:*)",
-      "Bash(time:*)"
+      "Bash(time:*)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }
