@@ -1,13 +1,13 @@
-# COUNTRY "all" = run all, "default" = run only incomplete ones within these 12: AU, BR, CA, CN, DE, FR, GB, IN, IT, JP, KR, US
-TRADEFLOW: domestic
-YEAR: 2024
+# COUNTRY.list "all" = run all, "default" = run only incomplete ones within these 12: AU, BR, CA, CN, DE, FR, GB, IN, IT, JP, KR, US
+TRADEFLOW: domestic,exports,imports
+YEAR: 2022
 COUNTRY:
-  list: US
+  list: all
 FOLDERS:
-  base: year/{year}
-  imports: year/{year}/{country}/imports
-  exports: year/{year}/{country}/exports
-  domestic: year/{year}/{country}/domestic
+  base: ../../trade-data/year/{year}
+  imports: ../../trade-data/year/{year}/{country}/imports
+  exports: ../../trade-data/year/{year}/{country}/exports
+  domestic: ../../trade-data/year/{year}/{country}/domestic
 FILES:
   factors: factor.csv
   industries: industry.csv

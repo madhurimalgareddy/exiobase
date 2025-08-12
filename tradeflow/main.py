@@ -235,14 +235,40 @@ def run_country_processing(country, tradeflow, batch_start_time, batch_timeout=1
 def main():
     """Smart batch processing with enhanced country handling"""
     config = load_config()
-    tradeflow = config['TRADEFLOW']
+    tradeflow_config = config['TRADEFLOW']
     
-    # Resolve country list (handles 'all', 'default', explicit)
-    all_countries = resolve_country_list(config)
+    # Handle comma-separated tradeflows
+    if ',' in tradeflow_config:
+        tradeflows = [tf.strip() for tf in tradeflow_config.split(',')]
+        print(f"📋 Processing multiple tradeflows: {', '.join(tradeflows)}")
+    else:
+        tradeflows = [tradeflow_config]
     
-    # Filter out already completed countries for resume functionality
-    countries, completed_countries = filter_incomplete_countries(all_countries, tradeflow, config['YEAR'])
-    
+    # Process each tradeflow separately
+    for tradeflow in tradeflows:
+        print(f"\n{'='*100}")
+        print(f"🚀 STARTING BATCH PROCESSING FOR TRADEFLOW: {tradeflow.upper()}")
+        print(f"{'='*100}")
+        
+        # Temporarily update config file for this tradeflow
+        original_tradeflow = config['TRADEFLOW']
+        update_config_file({'TRADEFLOW': tradeflow})
+        config['TRADEFLOW'] = tradeflow
+        
+        # Resolve country list (handles 'all', 'default', explicit)
+        all_countries = resolve_country_list(config)
+        
+        # Filter out already completed countries for resume functionality
+        countries, completed_countries = filter_incomplete_countries(all_countries, tradeflow, config['YEAR'])
+        
+        process_tradeflow(config, tradeflow, all_countries, countries, completed_countries)
+        
+        # Restore original config file
+        update_config_file({'TRADEFLOW': original_tradeflow})
+        config['TRADEFLOW'] = original_tradeflow
+
+def process_tradeflow(config, tradeflow, all_countries, countries, completed_countries):
+    """Process a single tradeflow for all countries"""
     print(f"\n🚀 STARTING SMART BATCH PROCESSING")
     print(f"Trade Flow: {tradeflow}")
     print(f"All countries: {', '.join(all_countries)}")
@@ -306,7 +332,7 @@ def main():
     failed = [c for c, success in results.items() if not success]
     
     print(f"\n{'='*80}")
-    print(f"🏁 SMART BATCH PROCESSING COMPLETE")
+    print(f"🏁 SMART BATCH PROCESSING COMPLETE FOR {tradeflow.upper()}")
     print(f"{'='*80}")
     print(f"⏱️  Total batch time: {batch_minutes}m {batch_seconds}s (of 5 hour limit)")
     if batch_time >= batch_timeout * 0.9:  # If we used 90%+ of time limit
@@ -322,9 +348,10 @@ def main():
     
     # Show final file counts
     print(f"\n📁 Final output summary:")
+    year = config['YEAR']
     for country in all_countries:
         try:
-            result = subprocess.run(['find', f'year/2019/{country}/{tradeflow}', '-name', '*.csv', '-type', 'f'], 
+            result = subprocess.run(['find', f'year/{year}/{country}/{tradeflow}', '-name', '*.csv', '-type', 'f'], 
                                   capture_output=True, text=True)
             file_count = len(result.stdout.strip().split('\n')) if result.stdout.strip() else 0
             status = "✅" if results[country] else "⚠️ "

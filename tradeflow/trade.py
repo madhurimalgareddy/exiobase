@@ -362,9 +362,31 @@ class ExiobaseTradeFlow:
                 )
                 print(f"Successfully downloaded Exiobase {self.year} data")
             except Exception as e:
-                print(f"Download failed: {e}")
-                print("Using fallback method with simulated data...")
-                return self.load_fallback_data()
+                print(f"Download failed for {self.year}: {e}")
+                # Only fallback to a prior year that doesn't yet have downloaded data
+                # If the year prior to the missing year already has a download, then exit the process
+                fallback_year = self.year - 1
+                fallback_file = self.model_path / f'IOT_{fallback_year}_{self.model_type}.zip'
+                
+                if fallback_file.exists():
+                    print(f"Prior year {fallback_year} already has downloaded data, preventing rerun. Exiting process.")
+                    print("Please manually download the requested year or use an available year.")
+                    exit(1)
+                else:
+                    print(f"Trying to download prior year {fallback_year}...")
+                    try:
+                        pymrio.download_exiobase3(
+                            storage_folder=self.model_path,
+                            system=self.model_type,
+                            years=[fallback_year]
+                        )
+                        print(f"Successfully downloaded Exiobase {fallback_year} data")
+                        self.year = fallback_year
+                        exio_file = fallback_file
+                    except Exception as fallback_e:
+                        print(f"Fallback download failed for {fallback_year}: {fallback_e}")
+                        print("Using fallback method with simulated data...")
+                        return self.load_fallback_data()
         
         # Parse the downloaded Exiobase data
         try:

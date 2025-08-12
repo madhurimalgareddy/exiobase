@@ -94,10 +94,7 @@ Run main.py to invove the following:
 source env/bin/activate
 
 # Run scripts in order
-python trade.py # Creates trade_factor.csv
-# python industryflow_finaldemand.py # Renamed with -DELETE added
-# python industryflow_factor.py # Renamed with -DELETE added
-# python create_full_trade_factor.py # trade_factor.csv with environmental impact coefficients
+python trade.py # Creates trade.csv, trade_factor.csv, industry.csv, factor.csv
 python trade_impact.py
 python trade_resource.py
 ```
