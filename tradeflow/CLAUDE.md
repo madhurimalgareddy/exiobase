@@ -171,24 +171,27 @@ The project uses a dual-file approach to balance comprehensive environmental cov
 
 ## Timeout Configuration
 
-The system implements a three-tier timeout hierarchy for robust processing management:
+The system implements a three-tier timeout hierarchy for robust processing management in **main.py** (batch processor):
 
-1. **Script timeout**: 20 minutes per individual script
+1. **Script timeout**: 20 minutes (1200 seconds) per individual script
    - Prevents any single script from hanging indefinitely
-   - Applies to each of the 6 processing scripts per country
+   - Applies to each of the 3 processing scripts per country: `trade.py`, `trade_impact.py`, `trade_resource.py`
    - Most granular level of timeout protection
+   - Implementation: `timeout=1200` in subprocess.run() calls
 
-2. **Country timeout**: 60 minutes per country total
+2. **Country timeout**: 60 minutes (3600 seconds) per country total
    - Limits total processing time for all scripts in a single country
    - Provides real-time countdown: "Country time remaining: X.X minutes"
    - Prevents any country from consuming excessive batch time
+   - Implementation: `country_timeout = 3600` in main.py
 
-3. **Batch timeout**: 5 hours for entire batch
+3. **Batch timeout**: 5 hours (18000 seconds) for entire batch
    - Overall time limit for processing all countries in the list
    - Shows remaining batch time: "Batch time remaining: X.X hours"
    - Most restrictive timeout - will stop processing when reached
+   - Implementation: `batch_timeout = 18000` in main.py
 
-**Timeout Priority**: The most restrictive timeout wins. If any timeout is exceeded, processing stops gracefully with clear status reporting.
+**Timeout Priority**: The most restrictive timeout wins. If any timeout is exceeded, processing stops gracefully with clear status reporting and automatic resume capability.
 
 ## Best Practices
 
