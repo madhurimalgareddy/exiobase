@@ -90,10 +90,11 @@ The scripts are run in this specific order to ensure proper data dependencies:
 Run main.py to invove the following:
 
 ```bash
-# Activate environment first
-source env/bin/activate
+# Create a virtual environment (commands above)
+# Run to invoke all 3 scripts
+python main.py
 
-# Run scripts in order
+# Or run scripts in order
 python trade.py # Creates trade.csv, trade_factor.csv, industry.csv, factor.csv
 python trade_impact.py
 python trade_resource.py
