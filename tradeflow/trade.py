@@ -574,7 +574,7 @@ class ExiobaseTradeFlow:
         """
         Export the processed data to CSV
         """
-        print(f"Exporting data to {self.output_file}...")
+        print(f"Exporting trade.csv data to {self.output_file}...")
         
         # Ensure we have the correct column order including trade_id
         if 'trade_id' in df.columns:

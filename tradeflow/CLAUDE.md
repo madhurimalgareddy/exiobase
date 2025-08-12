@@ -234,7 +234,43 @@ The scripts are run in this specific order to ensure proper data dependencies:
 
 ## Troubleshooting
 
-- **Empty domestic flows**: Check country codes match Exiobase regions exactly
-- **Missing trade_factor**: Ensure previous scripts completed successfully  
-- **Performance issues**: International flows use optimized factor selection
-- **Configuration errors**: Verify COUNTRY structure and current field population
+### Common Processing Failures
+
+#### **Memory Errors (Critical Issue)**
+- **Symptom**: `"FATAL ERROR: v8::ToLocalChecked Empty MaybeLocal"` after ~10 minutes
+- **Cause**: `trade_factor_lg.csv` files (~1.5GB) exceed Node.js memory limits
+- **Solution**: Use default `python trade.py` (not `python trade.py -lag`)
+- **Prevention**: Avoid large factor files for international trade processing
+
+#### **Missing Files**
+- **Symptom**: `"⚠️ WARNING: trade_factor.csv not found"`
+- **Solution**: Run scripts in correct dependency order: `trade.py` → `trade_impact.py` → `trade_resource.py`
+- **Check**: Verify previous script completed successfully without errors
+
+#### **Empty Domestic Flows**
+- **Symptom**: No trade flows found for domestic processing
+- **Solution**: Check country codes match Exiobase regions exactly (CN, DE, JP, US, etc.)
+- **Diagnostic**: Look for flow count messages in script output (>0, >0.001, >0.01)
+
+#### **Timeout Errors**
+- **Script timeout**: 20 minutes per individual script
+- **Country timeout**: 60 minutes per country total  
+- **Batch timeout**: 5 hours for entire batch processing
+- **Solution**: Processing automatically resumes and skips completed countries
+
+#### **Performance Issues**
+- **International flows**: Use optimized 120-factor selection for performance
+- **Domestic flows**: Expect longer processing times with comprehensive 721-factor coverage
+- **Chunked processing**: Large datasets processed in 10,000-row chunks to manage memory
+
+#### **Configuration Errors**
+- **Country structure**: Verify COUNTRY dict format with proper 'current' field population
+- **Auto-resolution**: System handles "all", "default", or explicit country lists automatically
+- **File paths**: Ensure base directory structure exists before processing
+
+### Error Recovery Mechanisms
+
+- **Automatic fallbacks**: Scripts use simulated data when Exiobase downloads fail
+- **Resume functionality**: Batch processing skips countries with existing `runnote.md`
+- **Smart file selection**: Automatically chooses appropriate factor file based on trade flow type
+- **Progress tracking**: `runnote-inprogress.md` tracks processing stages for debugging
