@@ -8,11 +8,9 @@ FOLDERS:
   exports: year/{year}/{country}/exports
   domestic: year/{year}/{country}/domestic
 FILES:
-  factors: factors.csv
-  industries: industries.csv
-  industryflow: industryflow.csv
-  industryflow_finaldemand: industryflow_finaldemand.csv
-  industryflow_factor: industryflow_factor.csv
+  factors: factor.csv
+  industries: industry.csv
+  industryflow: trade.csv
   trade_factor: trade_factor.csv
   trade_factor_domestic: trade_factor_lg.csv
   trade_impact: trade_impact.csv

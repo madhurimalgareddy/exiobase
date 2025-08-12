@@ -36,7 +36,7 @@ def demo_workflow():
         # Show where files would be created
         files_to_create = [
             'industry_tradeflow',
-            'trade_factors', 
+            'trade_factor', 
             'trade_impacts',
             'trade_resources'
         ]
@@ -62,11 +62,11 @@ def demo_workflow():
     print("✅ Dynamic configuration switching")
     print("✅ Automatic directory creation")
     print("✅ Separate output folders for imports/exports/domestic")
-    print("✅ Shared reference files (industries.csv, factors.csv)")
+    print("✅ Shared reference files (industry.csv, factor.csv)")
     print("\nTo run analysis:")
     print("1. Set TRADEFLOW in config.yaml to 'imports', 'exports', or 'domestic'")
     print("2. Run: python industry_tradeflow.py")
-    print("3. Run: python create_trade_impacts.py")
+    print("3. Run: python trade_impact.py")
     print("4. Run: python create_split_resources.py")
     print("Or use: python run_all_tradeflows.py (processes all types)")
 

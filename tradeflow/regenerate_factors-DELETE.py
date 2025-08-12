@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Regenerate factors.csv with new column structure: factor_id,unit,context,name,fullname
+Regenerate factor.csv with new column structure: factor_id,unit,context,name,fullname
 """
 
 import pandas as pd
@@ -8,7 +8,7 @@ from config_loader import load_config, get_reference_file_path
 
 def regenerate_factors():
     """
-    Regenerate factors.csv with the new column order and remove flow column
+    Regenerate factor.csv with the new column order and remove flow column
     """
     
     # Load configuration
@@ -19,17 +19,17 @@ def regenerate_factors():
     detailed_file = get_reference_file_path(config, 'factors').replace('.csv', '_detailed.csv')
     detailed_df = pd.read_csv(detailed_file)
     
-    # Create the new factors.csv with required columns in correct order
+    # Create the new factor.csv with required columns in correct order
     factors_new = detailed_df[['factor_id', 'unit', 'context', 'name', 'full_stressor_name']].copy()
     
     # Rename the full_stressor_name column to fullname
     factors_new = factors_new.rename(columns={'full_stressor_name': 'fullname'})
     
-    # Save the new factors.csv
+    # Save the new factor.csv
     output_file = get_reference_file_path(config, 'factors')
     factors_new.to_csv(output_file, index=False)
     
-    print(f"Regenerated factors.csv with {len(factors_new)} factors")
+    print(f"Regenerated factor.csv with {len(factors_new)} factors")
     print("New column structure: factor_id, unit, context, name, fullname")
     
     # Display sample

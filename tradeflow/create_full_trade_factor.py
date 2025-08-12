@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Create trade_factors.csv with environmental impact coefficients
-For domestic flows: creates both trade_factors.csv and trade_factors_lg.csv
-For imports/exports: creates only trade_factors.csv
+Create trade_factor.csv with environmental impact coefficients
+For domestic flows: creates both trade_factor.csv and trade_factor_lg.csv
+For imports/exports: creates only trade_factor.csv
 """
 
 import pandas as pd
@@ -29,7 +29,7 @@ def create_run_note(config, stage, details):
     with open(progress_file, 'w') as f:
         f.write(existing_content + new_entry)
 
-def finalize_run_note(config, trade_factors_file_used):
+def finalize_run_note(config, trade_factor_file_used):
     """Finalize run notes and create final runnote.md"""
     folder = get_output_folder(config)
     progress_file = Path(folder) / 'runnote-inprogress.md'
@@ -54,7 +54,7 @@ def finalize_run_note(config, trade_factors_file_used):
 **Trade Flow:** {config['TRADEFLOW']}  
 **Year:** {config['YEAR']}  
 **Completed:** {timestamp}  
-**Trade Factors File Used:** {trade_factors_file_used}
+**Trade Factors File Used:** {trade_factor_file_used}
 
 ## Processing Summary
 
@@ -62,19 +62,19 @@ def finalize_run_note(config, trade_factors_file_used):
 
 ## Files Generated
 
-- industryflow.csv: Main trade flow data
+- trade.csv: Main trade flow data
 - industryflow_finaldemand.csv: Final demand flows (Y matrix)
 - industryflow_factor.csv: Factor coefficients (F matrix)
-- {trade_factors_file_used}: Environmental impact coefficients
-- trade_impacts.csv: Aggregated environmental impacts
-- trade_resources.csv: Resource use analysis
+- {trade_factor_file_used}: Environmental impact coefficients
+- trade_impact.csv: Aggregated environmental impacts
+- trade_resource.csv: Resource use analysis
 - trade_employment.csv: Employment impact analysis
-- trade_materials.csv: Material flow analysis
+- trade_material.csv: Material flow analysis
 
 ## Notes
 
-- **Domestic flows** use trade_factors_lg.csv (all 721 factors) for comprehensive analysis
-- **Import/Export flows** use trade_factors.csv (selected factors) for performance
+- **Domestic flows** use trade_factor_lg.csv (all 721 factors) for comprehensive analysis
+- **Import/Export flows** use trade_factor.csv (selected factors) for performance
 - This run completed successfully with full environmental impact coverage
 """
         
@@ -85,11 +85,11 @@ def finalize_run_note(config, trade_factors_file_used):
         # Remove progress file
         progress_file.unlink()
 
-def create_trade_factors():
+def create_trade_factor():
     """
-    Create trade_factors files based on trade flow type
-    Domestic: creates both trade_factors.csv and trade_factors_lg.csv
-    Others: creates only trade_factors.csv
+    Create trade_factor files based on trade flow type
+    Domestic: creates both trade_factor.csv and trade_factor_lg.csv
+    Others: creates only trade_factor.csv
     """
     config = load_config()
     is_domestic = config.get('TRADEFLOW', '').lower() == 'domestic'
@@ -115,13 +115,13 @@ def create_trade_factors():
         
         # Create standard version (selected factors)
         standard_factors = select_key_factors(factors_df, config['PROCESSING']['partial_factor_limit'])
-        standard_file = create_trade_factors_file(config, trade_df, standard_factors, 'trade_factors')
+        standard_file = create_trade_factor_file(config, trade_df, standard_factors, 'trade_factor')
         
         # Create comprehensive version (all factors)  
-        lg_file = create_trade_factors_file(config, trade_df, factors_df, 'trade_factors_domestic')
+        lg_file = create_trade_factor_file(config, trade_df, factors_df, 'trade_factor_domestic')
         
         # Use the lg version for downstream processing
-        used_file = config['FILES']['trade_factors_domestic']
+        used_file = config['FILES']['trade_factor_domestic']
         create_run_note(config, "Domestic Files Created", f"Standard: {standard_file}, Comprehensive: {lg_file}")
         
     else:
@@ -129,15 +129,15 @@ def create_trade_factors():
         
         # Create standard version only
         selected_factors = select_key_factors(factors_df, config['PROCESSING']['partial_factor_limit'])
-        standard_file = create_trade_factors_file(config, trade_df, selected_factors, 'trade_factors')
-        used_file = config['FILES']['trade_factors']
+        standard_file = create_trade_factor_file(config, trade_df, selected_factors, 'trade_factor')
+        used_file = config['FILES']['trade_factor']
         create_run_note(config, "Standard File Created", f"File: {standard_file}")
     
     finalize_run_note(config, used_file)
     return used_file
 
-def create_trade_factors_file(config, trade_df, factors_df, file_key):
-    """Create a single trade_factors file with specified factors"""
+def create_trade_factor_file(config, trade_df, factors_df, file_key):
+    """Create a single trade_factor file with specified factors"""
     
     # Use sample of trade flows for performance
     sample_size = min(config['PROCESSING']['sample_size'], len(trade_df))
@@ -151,7 +151,7 @@ def create_trade_factors_file(config, trade_df, factors_df, file_key):
     for extension, group in extension_groups:
         print(f"  {extension}: {len(group)} factors")
     
-    trade_factors_list = []
+    trade_factor_list = []
     np.random.seed(42)  # For reproducible results
     
     for _, trade_row in sample_trades.iterrows():
@@ -173,7 +173,7 @@ def create_trade_factors_file(config, trade_df, factors_df, file_key):
             if coefficient > 0:
                 impact_value = trade_amount * coefficient
                 
-                trade_factors_list.append({
+                trade_factor_list.append({
                     'trade_id': trade_id,
                     'factor_id': factor_id,
                     'coefficient': coefficient,
@@ -181,23 +181,23 @@ def create_trade_factors_file(config, trade_df, factors_df, file_key):
                 })
     
     # Create DataFrame and save
-    trade_factors_df = pd.DataFrame(trade_factors_list)
+    trade_factor_df = pd.DataFrame(trade_factor_list)
     
     # Get output path
     folder = get_output_folder(config)
     filename = config['FILES'][file_key]
     output_path = f"{folder}/{filename}"
     
-    trade_factors_df.to_csv(output_path, index=False)
+    trade_factor_df.to_csv(output_path, index=False)
     
-    print(f"\n✅ Created {output_path} with {len(trade_factors_df)} factor-trade relationships")
+    print(f"\n✅ Created {output_path} with {len(trade_factor_df)} factor-trade relationships")
     
-    if not trade_factors_df.empty:
-        print(f"Factors included: {trade_factors_df['factor_id'].nunique()} unique factors")
-        print(f"Trades covered: {trade_factors_df['trade_id'].nunique()} trade flows")
+    if not trade_factor_df.empty:
+        print(f"Factors included: {trade_factor_df['factor_id'].nunique()} unique factors")
+        print(f"Trades covered: {trade_factor_df['trade_id'].nunique()} trade flows")
         
         # Show breakdown by extension
-        extension_breakdown = trade_factors_df.merge(factors_df[['factor_id', 'extension']], on='factor_id')
+        extension_breakdown = trade_factor_df.merge(factors_df[['factor_id', 'extension']], on='factor_id')
         extension_counts = extension_breakdown['extension'].value_counts()
         print(f"Breakdown by extension:")
         for extension, count in extension_counts.items():
@@ -301,4 +301,4 @@ def generate_coefficient(extension, factor_name, industry):
     return coeff
 
 if __name__ == "__main__":
-    create_trade_factors()
+    create_trade_factor()

@@ -46,12 +46,12 @@ pip install pandas numpy pymrio sqlalchemy psycopg2-binary requests pyyaml
 source env/bin/activate
 
 # Run scripts in order
-python industryflow.py
-python industryflow_finaldemand.py  
-python industryflow_factor.py
-python create_full_trade_factors.py
-python create_trade_impacts.py
-python trade_resources.py
+python trade.py # Creates trade_factor.csv
+# python industryflow_finaldemand.py # Renamed with -DELETE added
+# python industryflow_factor.py # Renamed with -DELETE added
+# python create_full_trade_factor.py # trade_factor.csv with environmental impact coefficients
+python trade_impact.py
+python trade_resource.py
 ```
 
 #### Automated Batch Processing:
@@ -78,8 +78,8 @@ python update_current_country.py CN
 - **domestic**: Flows WITHIN the country (intra-country only)
 
 ### File Selection Logic
-- **Domestic flows**: Automatically uses `trade_factors_lg.csv` (all 721 factors) if available
-- **Import/Export flows**: Uses `trade_factors.csv` (120 selected factors) for performance
+- **Domestic flows**: Automatically uses `trade_factor_lg.csv` (all 721 factors) if available
+- **Import/Export flows**: Uses `trade_factor.csv` (120 selected factors) for performance
 - **Smart fallback**: If `_lg` version doesn't exist, falls back to standard version
 
 ## Data Processing Patterns
@@ -90,11 +90,11 @@ python update_current_country.py CN
 - **Extensions**: Air emissions, employment, energy, land use, materials, water, etc.
 
 ### Trade Factors Strategy
-- **Domestic Processing**: Uses all 721 factors (`trade_factors_lg.csv`) because:
+- **Domestic Processing**: Uses all 721 factors (`trade_factor_lg.csv`) because:
   - Intra-country trade volumes are smaller than international flows
   - Comprehensive environmental coverage is feasible
   - Processing time remains manageable (\~1-2 minutes)
-- **International Processing**: Uses 120 selected factors (`trade_factors.csv`) because:
+- **International Processing**: Uses 120 selected factors (`trade_factor.csv`) because:
   - International trade volumes are much larger
   - Performance optimization necessary
   - Key environmental impacts still captured
@@ -103,7 +103,7 @@ python update_current_country.py CN
 
 - **Exiobase data**: `exiobase_data/IOT_{year}_pxp.zip`
 - **Country outputs**: `year/{year}/{country}/{tradeflow}/`
-- **Reference files**: `year/{year}/industries.csv`, `year/{year}/factors.csv`
+- **Reference files**: `year/{year}/industry.csv`, `year/{year}/factor.csv`
 - **Run documentation**: `runnote.md` (overwritten after each full run)
 
 ## Progress Tracking System
@@ -114,7 +114,7 @@ python update_current_country.py CN
 - **Auto-cleanup**: Progress file deleted after creating final summary
 
 ### Key Information Tracked
-- Trade factors file used (`trade_factors.csv` vs `trade_factors_lg.csv`)
+- Trade factors file used (`trade_factor.csv` vs `trade_factor_lg.csv`)
 - Processing timestamps and duration
 - File generation summary
 - Environmental impact coverage details
@@ -122,21 +122,23 @@ python update_current_country.py CN
 ## Output Files Structure
 
 ### Core Trade Data
-- **industryflow.csv**: `trade_id, year, region1, region2, industry1, industry2, amount`
+- **trade.csv**: `trade_id, year, region1, region2, industry1, industry2, amount`
+<!--
 - **industryflow_finaldemand.csv**: Final demand flows (Y matrix data)
 - **industryflow_factor.csv**: Environmental coefficients (F matrix data)
+-->
 
 ### Environmental Impact Data  
-- **trade_factors.csv**: Selected factors for imports/exports (120 factors)
-- **trade_factors_lg.csv**: All factors for domestic flows (721 factors)
-- **trade_impacts.csv**: Comprehensive impact summary per trade transaction
+- **trade_factor.csv**: Selected factors for imports/exports (120 factors)
+- **trade_factor_lg.csv**: All factors for domestic flows (721 factors)
+- **trade_impact.csv**: Comprehensive impact summary per trade transaction
 - **trade_employment.csv**: Employment impact analysis
-- **trade_resources.csv**: Resource use analysis (water, energy, land)
-- **trade_materials.csv**: Material flow analysis
+- **trade_resource.csv**: Resource use analysis (water, energy, land)
+- **trade_material.csv**: Material flow analysis
 
 ### Reference Files
-- **industries.csv**: Sector mapping with standardized 5-character codes
-- **factors.csv**: Environmental factor definitions with units and contexts
+- **industry.csv**: Sector mapping with standardized 5-character codes
+- **factor.csv**: Environmental factor definitions with units and contexts
 
 ## Key Libraries
 
@@ -188,17 +190,18 @@ The system implements a three-tier timeout hierarchy for robust processing manag
 
 The scripts are run in this specific order to ensure proper data dependencies:
 
-create\_full_trade_factors.py
+create\_full_trade_factor.py
 
-    create_full_trade_factors.py
+    create_full_trade_factor.py
 
-### 1. **industryflow.py** - Core Trade Flow Extraction
+### 1. **trade.py** - Core Trade Flow Extraction
 - **Input**: Exiobase Z-matrix (inter-industry flows)
-- **Output**: `industryflow.csv` - Main trade flow data
+- **Output**: `industry.csv`,`factor.csv`, trade_factor.csv`, `trade_factor_lg.csv` - Main trade flow data
 - **Purpose**: Extracts trade flows based on config (imports/exports/domestic)
 - **Key Feature**: For domestic flows, extracts intra-country flows (country→same country)
 - **Processing time**: \~2-3 minutes per country
 
+<!--
 ### 2. **industryflow_finaldemand.py** - Final Demand Flows  
 - **Input**: Exiobase Y-matrix (final demand)
 - **Output**: `industryflow_finaldemand.csv`
@@ -211,30 +214,31 @@ create\_full_trade_factors.py
 - **Purpose**: Extracts environmental intensity coefficients per industry
 - **Processing time**: \~1-2 minutes per country
 
-### 4. **create\_full_trade_factors.py** - Environmental Impact Coefficients
-- **Input**: `industryflow.csv` + `factors.csv`
+### 4. **create\_full_trade_factor.py** - Environmental Impact Coefficients
+- **Input**: `trade.csv` + `factor.csv`
 - **Output**: 
-  - **Domestic**: Both `trade_factors.csv` (120 factors) AND `trade_factors_lg.csv` (721 factors)
-  - **Imports/Exports**: Only `trade_factors.csv` (120 factors)
+  - **Domestic**: Both `trade_factor.csv` (120 factors) AND `trade_factor_lg.csv` (721 factors)
+  - **Imports/Exports**: Only `trade_factor.csv` (120 factors)
 - **Purpose**: Links trade flows to environmental impacts
 - **Key Innovation**: Domestic flows use `_lg` version since intra-country volumes are smaller
 - **Processing time**: \~1-2 minutes per country
+-->
 
-### 5. **create_trade_impacts.py** - Aggregated Environmental Impacts
-- **Input**: `industryflow.csv` + `trade_factors_lg.csv` (domestic) or `trade_factors.csv` (others)
-- **Output**: `trade_impacts.csv`
+### 5. **trade_impact.py** - Aggregated Environmental Impacts
+- **Input**: `trade_factor_lg.csv` (domestic) or `trade_factor.csv` (others)
+- **Output**: `trade_impact.csv`
 - **Purpose**: Comprehensive environmental impact summary per trade transaction
 - **Processing time**: \~10-15 seconds per country
 
-### 6. **trade_resources.py** - Resource Analysis
-- **Input**: `trade_factors_lg.csv` or `trade_factors.csv`
-- **Output**: `trade_employment.csv`, `trade_resources.csv`, `trade_materials.csv`
+### 6. **trade_resource.py** - Resource Analysis with 3 factor table outputs (for optimal sizes and processing time)
+- **Input**: `trade_factor_lg.csv` or `trade_factor.csv`
+- **Output**: `trade_employment.csv`, `trade_resource.csv`, `trade_material.csv`
 - **Purpose**: Specialized analysis of employment, resources, and materials
 - **Processing time**: \~5-15 seconds per country
 
 ## Troubleshooting
 
 - **Empty domestic flows**: Check country codes match Exiobase regions exactly
-- **Missing trade_factors**: Ensure previous scripts completed successfully  
+- **Missing trade_factor**: Ensure previous scripts completed successfully  
 - **Performance issues**: International flows use optimized factor selection
 - **Configuration errors**: Verify COUNTRY structure and current field population

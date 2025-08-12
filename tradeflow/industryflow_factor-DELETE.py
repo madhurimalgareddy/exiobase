@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
+We can probably DELETE this script. It used flow_id rather than trade_id.
+
 Extract factor input flows from Exiobase F matrices for industryflow_factor.csv
-Based on the same pattern as industryflow.py and industryflow_finaldemand.py but processes F matrices.
+Based on the same pattern as trade.py and industryflow_finaldemand.py but processes F matrices.
 
 The F matrices contain environmental and socioeconomic coefficients:
 - 721 factors across 6 extensions (air_emissions, employment, energy, land, material, water)
@@ -32,11 +34,11 @@ class FactorInputExtractor:
         self.sector_mapping = self.load_sector_mapping()
         
     def load_sector_mapping(self):
-        """Load the sector mapping from industries.csv"""
+        """Load the sector mapping from industry.csv"""
         try:
             industries_file = get_reference_file_path(self.config, 'industries')
             if Path(industries_file).exists():
-                print("Loading existing sector mapping from industries.csv")
+                print("Loading existing sector mapping from industry.csv")
                 mapping_df = pd.read_csv(industries_file)
                 return dict(zip(mapping_df['name'], mapping_df['industry_id']))
             else:
@@ -140,7 +142,7 @@ class FactorInputExtractor:
         factor_data['flow_type'] = 'factor_input'
         
         # Reorder columns (adapted from other scripts' column order)
-        factor_data = factor_data[['factor_id', 'year', 'region', 'sector', 'industry', 'factor_name', 'coefficient', 'flow_type', 'extension_type']]
+        factor_data = factor_data[['tradeORfactor_id', 'year', 'region', 'sector', 'industry', 'factor_name', 'coefficient', 'flow_type', 'extension_type']]
         
         return factor_data
 

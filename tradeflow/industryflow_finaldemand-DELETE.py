@@ -28,11 +28,11 @@ class FinalDemandExtractor:
         self.sector_mapping = self.load_sector_mapping()
         
     def load_sector_mapping(self):
-        """Load the sector mapping from industries.csv"""
+        """Load the sector mapping from industry.csv"""
         try:
             industries_file = get_reference_file_path(self.config, 'industries')
             if Path(industries_file).exists():
-                print("Loading existing sector mapping from industries.csv")
+                print("Loading existing sector mapping from industry.csv")
                 mapping_df = pd.read_csv(industries_file)
                 return dict(zip(mapping_df['name'], mapping_df['industry_id']))
             else:

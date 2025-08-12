@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Update existing industry_tradeflow.csv to add trade_id and create trade_factors.csv
+Update existing industry_tradeflow.csv to add trade_id and create trade_factor.csv
 """
 
 import pandas as pd
@@ -9,14 +9,14 @@ from config_loader import load_config, get_file_path, get_reference_file_path
 
 def update_trade_files():
     """
-    Add trade_id to existing industry_tradeflow.csv and create trade_factors.csv
+    Add trade_id to existing industry_tradeflow.csv and create trade_factor.csv
     """
     
     # Load configuration
     config = load_config()
     
-    # Read existing industryflow.csv
-    print("Reading existing industryflow.csv...")
+    # Read existing trade.csv
+    print("Reading existing trade.csv...")
     trade_file = get_file_path(config, 'industryflow')
     trade_df = pd.read_csv(trade_file)
     
@@ -31,15 +31,15 @@ def update_trade_files():
         
         # Save updated file
         trade_df.to_csv(trade_file, index=False)
-        print(f"Updated industryflow.csv with trade_id column ({len(trade_df)} rows)")
+        print(f"Updated trade.csv with trade_id column ({len(trade_df)} rows)")
     
-    # Read factors.csv
-    print("Reading factors.csv...")
+    # Read factor.csv
+    print("Reading factor.csv...")
     factors_file = get_reference_file_path(config, 'factors')
     factors_df = pd.read_csv(factors_file)
     
-    # Create trade_factors.csv with realistic sample data
-    print("Creating trade_factors.csv...")
+    # Create trade_factor.csv with realistic sample data
+    print("Creating trade_factor.csv...")
     
     # Focus on major factors for demonstration
     major_factors = factors_df[factors_df['name'].isin(['CO2', 'CH4', 'N2O', 'CO', 'NOX'])]['factor_id'].tolist()
@@ -47,7 +47,7 @@ def update_trade_files():
         # If specific factors not found, use first few
         major_factors = factors_df['factor_id'].head(5).tolist()
     
-    trade_factors_list = []
+    trade_factor_list = []
     
     # Sample trade flows (limit to first 1000 for performance)
     sample_trades = trade_df.head(1000)
@@ -93,7 +93,7 @@ def update_trade_files():
             
             # Only include meaningful impacts
             if abs(impact_value) > 0.01:
-                trade_factors_list.append({
+                trade_factor_list.append({
                     'trade_id': trade_id,
                     'factor_id': factor_id,
                     'coefficient': round(coefficient, 6),
@@ -101,19 +101,19 @@ def update_trade_files():
                 })
     
     # Create DataFrame and save
-    trade_factors_df = pd.DataFrame(trade_factors_list)
-    output_file = get_file_path(config, 'trade_factors')
-    trade_factors_df.to_csv(output_file, index=False)
+    trade_factor_df = pd.DataFrame(trade_factor_list)
+    output_file = get_file_path(config, 'trade_factor')
+    trade_factor_df.to_csv(output_file, index=False)
     
-    print(f"Created trade_factors.csv with {len(trade_factors_df)} factor-trade relationships")
-    print(f"Factors included: {trade_factors_df['factor_id'].nunique()} unique factors")
-    print(f"Trades covered: {trade_factors_df['trade_id'].nunique()} trade flows")
+    print(f"Created trade_factor.csv with {len(trade_factor_df)} factor-trade relationships")
+    print(f"Factors included: {trade_factor_df['factor_id'].nunique()} unique factors")
+    print(f"Trades covered: {trade_factor_df['trade_id'].nunique()} trade flows")
     
     # Display sample
-    print("\nSample trade_factors.csv data:")
-    print(trade_factors_df.head(10).to_string(index=False))
+    print("\nSample trade_factor.csv data:")
+    print(trade_factor_df.head(10).to_string(index=False))
     
-    return trade_factors_df
+    return trade_factor_df
 
 if __name__ == "__main__":
     update_trade_files()

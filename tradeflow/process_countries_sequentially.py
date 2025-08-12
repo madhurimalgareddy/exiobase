@@ -32,12 +32,12 @@ def run_single_country_scripts(country, tradeflow):
     update_config({'COUNTRY.current': country})
     
     scripts = [
-        'industryflow.py',
+        'trade.py',
         'industryflow_finaldemand.py',
         'industryflow_factor.py',
-        'create_full_trade_factors.py',
-        'create_trade_impacts.py',
-        'trade_resources.py'
+        'create_full_trade_factor.py',
+        'trade_impact.py',
+        'trade_resource.py'
     ]
     
     success_count = 0

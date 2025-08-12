@@ -144,12 +144,12 @@ def run_country_processing(country, tradeflow, batch_start_time, batch_timeout=1
     update_config_file({'COUNTRY.current': country})
     
     scripts = [
-        'industryflow.py',
+        'trade.py',
         'industryflow_finaldemand.py',
         'industryflow_factor.py',
-        'create_full_trade_factors.py',
-        'create_trade_impacts.py',
-        'trade_resources.py'
+        'create_full_trade_factor.py',
+        'trade_impact.py',
+        'trade_resource.py'
     ]
     
     success_count = 0
@@ -221,7 +221,7 @@ def run_country_processing(country, tradeflow, batch_start_time, batch_timeout=1
     # Enhanced status message
     if success_count == len(scripts):
         print(f"🎉 {country} {tradeflow} processing FULLY SUCCESSFUL!")
-        print(f"📁 Generated: trade_factors.csv + trade_factors_lg.csv (721 factors)")
+        print(f"📁 Generated: trade_factor.csv + trade_factor_lg.csv (721 factors)")
     else:
         print(f"⚠️  {country} {tradeflow} processing PARTIALLY COMPLETED ({success_count}/{len(scripts)} scripts)")
         if total_time >= country_timeout * 0.9:

@@ -45,12 +45,12 @@ def run_script(script_name, country, tradeflow):
 def run_all_scripts_for_country(country, tradeflow):
     """Run all export scripts for a single country"""
     scripts = [
-        'industryflow.py',
+        'trade.py',
         'industryflow_finaldemand.py', 
         'industryflow_factor.py',
-        'create_full_trade_factors.py',
-        'create_trade_impacts.py',
-        'trade_resources.py'
+        'create_full_trade_factor.py',
+        'trade_impact.py',
+        'trade_resource.py'
     ]
     
     print(f"\n🌍 Processing {country} for {tradeflow}")

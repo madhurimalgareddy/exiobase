@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Extract all factors/flows from Exiobase extensions and create factors.csv
+Extract all factors/flows from Exiobase extensions and create factor.csv
 """
 
 import pandas as pd
@@ -11,7 +11,7 @@ from config_loader import load_config, get_reference_file_path
 
 def create_factors_csv():
     """
-    Extract all factors from Exiobase extensions and create factors.csv
+    Extract all factors from Exiobase extensions and create factor.csv
     """
     # Load configuration
     config = load_config()
@@ -113,7 +113,7 @@ def create_factors_csv():
     # Create DataFrame
     factors_df = pd.DataFrame(all_factors)
     
-    # Create the final factors.csv with only required columns
+    # Create the final factor.csv with only required columns
     output_df = factors_df[['factor_id', 'unit', 'stressor', 'extension']].copy()
     
     # Save to CSV

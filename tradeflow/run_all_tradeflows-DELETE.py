@@ -45,7 +45,7 @@ def process_tradeflow_type(tradeflow_type):
     # List of scripts to run in order
     scripts = [
         'industry_tradeflow.py',
-        'create_trade_impacts.py', 
+        'trade_impact.py', 
         'create_split_resources.py'
     ]
     

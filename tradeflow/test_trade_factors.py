@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script to verify the trade_factors creation with fixed column mapping
+Test script to verify the trade_factor creation with fixed column mapping
 """
 
 import pandas as pd

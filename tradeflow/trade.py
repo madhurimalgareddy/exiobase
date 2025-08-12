@@ -2,29 +2,29 @@
 """
 Industry Trade Flow Analysis for Exiobase Data
 Extracts trade flow data based on config settings for imports, exports, or domestic flows
-Outputs industryflow.csv with columns: year, region1, region2, industry1, industry2, amount
+Outputs trade.csv with columns: year, region1, region2, industry1, industry2, amount
 
 Default (Recommended):
-python industryflow.py
-Creates small trade_factors.csv (~50 factors, manageable size)
+python trade.py
+Creates small trade_factor.csv (~50 factors, manageable size)
 
 Large File (Not Recommended):
-python industryflow.py -lag
-Creates trade_factors_lg.csv (~1.5GB, causes Node.js memory errors) 
+python trade.py -lag
+Creates trade_factor_lg.csv (~1.5GB, causes Node.js memory errors) 
 
 Creates 4 files
 
   1. Reference Files (created if they don't exist) - used for trade factor generation process:
-  - industries.csv - Sector mapping with 5-character industry codes (calls create_sector_mapping())
-  - factors.csv - Environmental factor definitions from Exiobase extensions (calls create_factors_csv())
+  - industry.csv - Sector mapping with 5-character industry codes (calls create_sector_mapping())
+  - factor.csv - Environmental factor definitions from Exiobase extensions (calls create_factors_csv())
 
   2. Primary Output:
-  - industryflow.csv - The main trade flow data with columns: trade_id, year, region1, region2, industry1, industry2,
+  - trade.csv - The main trade flow data with columns: trade_id, year, region1, region2, industry1, industry2,
   amount
 
   3. Trade Factors (your focus):
-  - trade_factors.csv (default, small ~50 factors)
-  - trade_factors_lg.csv (with -lag flag, large ~721 factors)
+  - trade_factor.csv (default, small ~50 factors)
+  - trade_factor_lg.csv (with -lag flag, large ~721 factors)
 
 """
 
@@ -84,12 +84,12 @@ class ExiobaseTradeFlow:
 
     def load_sector_mapping(self):
         """
-        Load the sector mapping from industries.csv or create it if it doesn't exist
+        Load the sector mapping from industry.csv or create it if it doesn't exist
         """
         industries_file = get_reference_file_path(self.config, 'industries')
         
         if Path(industries_file).exists():
-            print("Loading existing sector mapping from industries.csv")
+            print("Loading existing sector mapping from industry.csv")
             mapping_df = pd.read_csv(industries_file)
             # Create a mapping dictionary from sector name to 5-char ID
             return dict(zip(mapping_df['name'], mapping_df['industry_id']))
@@ -102,23 +102,23 @@ class ExiobaseTradeFlow:
 
     def create_factors_export(self):
         """
-        Create the factors.csv export if it doesn't exist
+        Create the factor.csv export if it doesn't exist
         """
         factors_file = get_reference_file_path(self.config, 'factors')
         
         if Path(factors_file).exists():
-            print("factors.csv already exists")
+            print("factor.csv already exists")
         else:
-            print("Creating factors.csv from Exiobase extensions...")
+            print("Creating factor.csv from Exiobase extensions...")
             try:
                 from factors import create_factors_csv
                 create_factors_csv()
             except Exception as e:
-                print(f"Failed to create factors.csv: {e}")
+                print(f"Failed to create factor.csv: {e}")
 
     def _apply_partial_factors_filter(self, F_stacked, ext_name):
         """
-        Apply filtering to create smaller trade_factors.csv using selected factors
+        Apply filtering to create smaller trade_factor.csv using selected factors
         """
         partial_limit = self.config['PROCESSING'].get('partial_factor_limit', 50)
         
@@ -161,11 +161,11 @@ class ExiobaseTradeFlow:
         print(f"    Selected {len(F_stacked)} factors from {ext_name} (partial factors mode)")
         return F_stacked
 
-    def create_trade_factors(self, trade_df, exio_model):
+    def create_trade_factor(self, trade_df, exio_model):
         """
-        Create trade_factors.csv that links each trade flow to environmental factors
+        Create trade_factor.csv that links each trade flow to environmental factors
         """
-        print("Creating trade_factors.csv with real Exiobase factor data...")
+        print("Creating trade_factor.csv with real Exiobase factor data...")
         
         try:
             # Load the factors mapping
@@ -179,7 +179,7 @@ class ExiobaseTradeFlow:
             
             extensions = ['air_emissions', 'employment', 'energy', 'land', 'material', 'water']
             
-            all_trade_factors = []
+            all_trade_factor = []
             
             for ext_name in extensions:
                 if hasattr(exio_model, ext_name):
@@ -223,7 +223,7 @@ class ExiobaseTradeFlow:
                         
                         # Create efficient merge - process in chunks for memory management
                         chunk_size = 10000
-                        trade_factors_chunks = []
+                        trade_factor_chunks = []
                         total_chunks = (len(trade_df) + chunk_size - 1) // chunk_size
                         
                         for i in range(0, len(trade_df), chunk_size):
@@ -232,79 +232,79 @@ class ExiobaseTradeFlow:
                             chunk_num = i // chunk_size + 1
                             
                             # Efficient merge using index-based joins
-                            trade_factors_chunk = chunk_df.merge(
+                            trade_factor_chunk = chunk_df.merge(
                                 F_stacked.reset_index(), 
                                 left_on=['region1', 'industry1'], 
                                 right_on=['region', 'industry_id'],
                                 how='inner'
                             )
                             
-                            if not trade_factors_chunk.empty:
-                                trade_factors_chunks.append(trade_factors_chunk)
+                            if not trade_factor_chunk.empty:
+                                trade_factor_chunks.append(trade_factor_chunk)
                             
                             # Progress report every chunk
                             chunk_time = time.time() - chunk_start
                             elapsed_total = time.time() - ext_start_time
-                            print(f"    Chunk {chunk_num}/{total_chunks} completed in {chunk_time:.1f}s | Total: {elapsed_total:.1f}s | Found: {len(trade_factors_chunk) if not trade_factors_chunk.empty else 0} matches")
+                            print(f"    Chunk {chunk_num}/{total_chunks} completed in {chunk_time:.1f}s | Total: {elapsed_total:.1f}s | Found: {len(trade_factor_chunk) if not trade_factor_chunk.empty else 0} matches")
                         
                         # Combine all chunks
-                        if trade_factors_chunks:
-                            trade_factors_merge = pd.concat(trade_factors_chunks, ignore_index=True)
-                            print(f"  Combined {len(trade_factors_chunks)} chunks -> {len(trade_factors_merge)} total matches")
+                        if trade_factor_chunks:
+                            trade_factor_merge = pd.concat(trade_factor_chunks, ignore_index=True)
+                            print(f"  Combined {len(trade_factor_chunks)} chunks -> {len(trade_factor_merge)} total matches")
                         else:
-                            trade_factors_merge = pd.DataFrame()
+                            trade_factor_merge = pd.DataFrame()
                         
-                        if not trade_factors_merge.empty:
+                        if not trade_factor_merge.empty:
                             # Calculate factor impacts
-                            trade_factors_merge['impact_value'] = trade_factors_merge['amount'] * trade_factors_merge['coefficient']
+                            trade_factor_merge['impact_value'] = trade_factor_merge['amount'] * trade_factor_merge['coefficient']
                             
                             # Filter for meaningful impacts (keep all meaningful data)
-                            initial_count = len(trade_factors_merge)
-                            trade_factors_merge = trade_factors_merge[abs(trade_factors_merge['impact_value']) > 0.001]
-                            print(f"  Filtered {initial_count} -> {len(trade_factors_merge)} meaningful impacts (>0.001)")
+                            initial_count = len(trade_factor_merge)
+                            trade_factor_merge = trade_factor_merge[abs(trade_factor_merge['impact_value']) > 0.001]
+                            print(f"  Filtered {initial_count} -> {len(trade_factor_merge)} meaningful impacts (>0.001)")
                             
                             # Keep only needed columns
-                            trade_factor_subset = trade_factors_merge[['trade_id', 'factor_id', 'coefficient', 'impact_value']]
+                            trade_factor_subset = trade_factor_merge[['trade_id', 'factor_id', 'coefficient', 'impact_value']]
                             trade_factor_subset['factor_id'] = trade_factor_subset['factor_id'].astype(int)
                             
-                            all_trade_factors.extend(trade_factor_subset.to_dict('records'))
+                            all_trade_factor.extend(trade_factor_subset.to_dict('records'))
             
             # Create DataFrame and save
-            if all_trade_factors:
-                trade_factors_df = pd.DataFrame(all_trade_factors)
+            if all_trade_factor:
+                trade_factor_df = pd.DataFrame(all_trade_factor)
                 
                 # Determine output file based on mode
                 if self.use_large_factors:
-                    output_file = get_file_path(self.config, 'trade_factors')
+                    output_file = get_file_path(self.config, 'trade_factor')
                     if not output_file.endswith('_lg.csv'):
                         output_file = output_file.replace('.csv', '_lg.csv')
                     file_type = "large"
-                    print(f"⚠️  WARNING: Creating large trade_factors_lg.csv (~1.5GB) - this may cause memory issues in trade_resources.py")
+                    print(f"⚠️  WARNING: Creating large trade_factor_lg.csv (~1.5GB) - this may cause memory issues in trade_resource.py")
                 else:
-                    output_file = get_file_path(self.config, 'trade_factors')
+                    output_file = get_file_path(self.config, 'trade_factor')
                     if output_file.endswith('_lg.csv'):
                         output_file = output_file.replace('_lg.csv', '.csv')
                     file_type = "small"
                 
-                trade_factors_df.to_csv(output_file, index=False)
-                print(f"Created {file_type} trade_factors file with {len(trade_factors_df)} factor-trade relationships")
+                trade_factor_df.to_csv(output_file, index=False)
+                print(f"Created {file_type} trade_factor file with {len(trade_factor_df)} factor-trade relationships")
                 print(f"File: {output_file}")
             else:
-                print("No trade-factor relationships found, creating empty trade_factors.csv")
-                output_file = get_file_path(self.config, 'trade_factors')
+                print("No trade-factor relationships found, creating empty trade_factor.csv")
+                output_file = get_file_path(self.config, 'trade_factor')
                 if output_file.endswith('_lg.csv'):
                     output_file = output_file.replace('_lg.csv', '.csv')
                 pd.DataFrame(columns=['trade_id', 'factor_id', 'coefficient', 'impact_value']).to_csv(output_file, index=False)
                 
         except Exception as e:
-            print(f"Error creating trade_factors.csv: {e}")
-            self.create_trade_factors_fallback(trade_df)
+            print(f"Error creating trade_factor.csv: {e}")
+            self.create_trade_factor_fallback(trade_df)
 
-    def create_trade_factors_fallback(self, trade_df):
+    def create_trade_factor_fallback(self, trade_df):
         """
-        Create a simplified trade_factors.csv for fallback data
+        Create a simplified trade_factor.csv for fallback data
         """
-        print("Creating simplified trade_factors.csv with sample data...")
+        print("Creating simplified trade_factor.csv with sample data...")
         
         try:
             # Create sample factor relationships for major flows
@@ -333,13 +333,13 @@ class ExiobaseTradeFlow:
                         'impact_value': impact_value
                     })
             
-            trade_factors_df = pd.DataFrame(sample_factors)
-            output_file = get_file_path(self.config, 'trade_factors')
-            trade_factors_df.to_csv(output_file, index=False)
-            print(f"Created sample trade_factors.csv with {len(trade_factors_df)} relationships")
+            trade_factor_df = pd.DataFrame(sample_factors)
+            output_file = get_file_path(self.config, 'trade_factor')
+            trade_factor_df.to_csv(output_file, index=False)
+            print(f"Created sample trade_factor.csv with {len(trade_factor_df)} relationships")
             
         except Exception as e:
-            print(f"Error creating fallback trade_factors.csv: {e}")
+            print(f"Error creating fallback trade_factor.csv: {e}")
 
     def download_and_process_exiobase(self):
         """
@@ -557,13 +557,13 @@ class ExiobaseTradeFlow:
         if isinstance(exio_model, pd.DataFrame):
             # Fallback data was returned
             df = exio_model
-            # For fallback data, create trade_factors with dummy data
-            self.create_trade_factors_fallback(df)
+            # For fallback data, create trade_factor with dummy data
+            self.create_trade_factor_fallback(df)
         else:
             # Real Exiobase model was returned
             df = self.extract_m_matrix_data(exio_model)
-            # Create trade_factors with real data
-            self.create_trade_factors(df, exio_model)
+            # Create trade_factor with real data
+            self.create_trade_factor(df, exio_model)
         
         # Sort by amount descending to show largest flows first
         df = df.sort_values('amount', ascending=False)
@@ -622,7 +622,7 @@ class ExiobaseTradeFlow:
             print("to importing industries in the United States. Data extracted from Exiobase v3.8.2")
             print("multiregional input-output database covering 163 industries across 44 countries and 5 RoW regions.")
             print("Downloaded using pymrio.download_exiobase3() and processed via pymrio.parse_exiobase3().")
-            print("Additional exports: industries.csv (200 sectors), factors.csv (721 factors), trade_factors.csv (factor impacts)")
+            print("Additional exports: industry.csv (200 sectors), factor.csv (721 factors), trade_factor.csv (factor impacts)")
             
             return True
             
@@ -642,13 +642,13 @@ def main():
     """
     parser = argparse.ArgumentParser(description='Generate trade factors for Exiobase data')
     parser.add_argument('-lag', '--large', action='store_true', 
-                       help='Generate large trade_factors_lg.csv with all factors (WARNING: ~1.5GB file, may cause memory issues)')
+                       help='Generate large trade_factor_lg.csv with all factors (WARNING: ~1.5GB file, may cause memory issues)')
     
     args = parser.parse_args()
     
     if args.large:
-        print("🚀 Large factors mode enabled - generating comprehensive trade_factors_lg.csv")
-        print("⚠️  WARNING: This will create a ~1.5GB file that may cause FATAL ERROR in trade_resources.py")
+        print("🚀 Large factors mode enabled - generating comprehensive trade_factor_lg.csv")
+        print("⚠️  WARNING: This will create a ~1.5GB file that may cause FATAL ERROR in trade_resource.py")
         print("   Node.js v8::ToLocalChecked Empty MaybeLocal error after ~10 minutes")
         print("   Consider using the default small file mode instead")
         print()

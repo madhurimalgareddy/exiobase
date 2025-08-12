@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Create split resource files: trade_employment.csv, trade_resources.csv (includes crops), trade_materials.csv
+Create split resource files: trade_employment.csv, trade_resource.csv (includes crops), trade_material.csv
 Uses configuration-driven approach for imports/exports/domestic analysis
 """
 
@@ -26,36 +26,36 @@ def create_split_resources():
     
     # Read the trade factors - use small optimized version by default
     try:
-        # Use the small optimized trade_factors.csv (50 selected factors)
-        trade_factors_file = get_file_path(config, 'trade_factors')
-        if trade_factors_file.endswith('_lg.csv'):
-            trade_factors_file = trade_factors_file.replace('_lg.csv', '.csv')
+        # Use the small optimized trade_factor.csv (50 selected factors)
+        trade_factor_file = get_file_path(config, 'trade_factor')
+        if trade_factor_file.endswith('_lg.csv'):
+            trade_factor_file = trade_factor_file.replace('_lg.csv', '.csv')
         
-        trade_factors_df = pd.read_csv(trade_factors_file)
-        print(f"Loaded {len(trade_factors_df)} trade-factor relationships (optimized small dataset)")
-        print(f"File: {trade_factors_file}")
+        trade_factor_df = pd.read_csv(trade_factor_file)
+        print(f"Loaded {len(trade_factor_df)} trade-factor relationships (optimized small dataset)")
+        print(f"File: {trade_factor_file}")
         
         # Check if large file exists and warn about potential issues
-        large_file = trade_factors_file.replace('.csv', '_lg.csv')
+        large_file = trade_factor_file.replace('.csv', '_lg.csv')
         if Path(large_file).exists():
             print(f"\n💡 Note: Large file {large_file} exists but using optimized version")
             print(f"   Large file (~1.5GB) causes FATAL ERROR: v8::ToLocalChecked Empty MaybeLocal")
             print(f"   after ~10 minutes due to memory limitations")
         
     except FileNotFoundError:
-        print(f"\n⚠️  WARNING: trade_factors.csv not found at {trade_factors_file}")
-        print(f"Run 'python industryflow.py' to generate the optimized trade factors file")
-        print(f"Or run 'python industryflow.py -lag' for the large version (not recommended)")
+        print(f"\n⚠️  WARNING: trade_factor.csv not found at {trade_factor_file}")
+        print(f"Run 'python trade.py' to generate the optimized trade factors file")
+        print(f"Or run 'python trade.py -lag' for the large version (not recommended)")
         return
     
     # Read the factors metadata
     factors_df = pd.read_csv(get_reference_file_path(config, 'factors'))
     print(f"Loaded {len(factors_df)} factor definitions")
     
-    # Merge trade_factors with factor metadata
+    # Merge trade_factor with factor metadata
     print("Merging trade factors with metadata...")
-    # Adapt to actual factors.csv column names: factor_id,unit,stressor,extension
-    enhanced_factors = trade_factors_df.merge(
+    # Adapt to actual factor.csv column names: factor_id,unit,stressor,extension
+    enhanced_factors = trade_factor_df.merge(
         factors_df[['factor_id', 'unit', 'stressor', 'extension']], 
         on='factor_id', 
         how='left'

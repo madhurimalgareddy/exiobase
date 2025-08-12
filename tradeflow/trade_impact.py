@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Create trade_impacts.csv that shows total environmental impacts per trade transaction
+Create trade_impact.csv that shows total environmental impacts per trade transaction
 """
 
 import pandas as pd
@@ -9,7 +9,7 @@ from config_loader import load_config, get_file_path, get_reference_file_path, p
 
 def create_trade_impacts():
     """
-    Create trade_impacts.csv by aggregating environmental impacts per trade transaction
+    Create trade_impact.csv by aggregating environmental impacts per trade transaction
     """
     # Load configuration
     config = load_config()
@@ -23,18 +23,18 @@ def create_trade_impacts():
     print(f"Loaded {len(trade_df)} trade flows")
     
     # Read the trade factors (environmental coefficients and impacts)
-    trade_factors_file = get_file_path(config, 'trade_factors')
-    trade_factors_df = pd.read_csv(trade_factors_file)
-    print(f"Loaded {len(trade_factors_df)} trade-factor relationships")
+    trade_factor_file = get_file_path(config, 'trade_factor')
+    trade_factor_df = pd.read_csv(trade_factor_file)
+    print(f"Loaded {len(trade_factor_df)} trade-factor relationships")
     
     # Read the factors metadata for units and extension
     factors_file = get_reference_file_path(config, 'factors')
     factors_df = pd.read_csv(factors_file)
     print(f"Loaded {len(factors_df)} factor definitions")
     
-    # Merge trade_factors with factor metadata
+    # Merge trade_factor with factor metadata
     print("Merging trade factors with metadata...")
-    enhanced_factors = trade_factors_df.merge(
+    enhanced_factors = trade_factor_df.merge(
         factors_df[['factor_id', 'unit', 'extension', 'stressor']], 
         on='factor_id', 
         how='left'
@@ -125,7 +125,7 @@ def create_trade_impacts():
     output_file = get_file_path(config, 'trade_impacts')
     trade_impacts.to_csv(output_file, index=False)
     
-    print(f"\nCreated trade_impacts.csv with {len(trade_impacts)} trade transactions")
+    print(f"\nCreated trade_impact.csv with {len(trade_impacts)} trade transactions")
     
     # Display summary statistics
     print(f"\nSummary Statistics:")
@@ -153,7 +153,7 @@ def create_trade_impacts():
             print(f"  {factor_type}: {value:,.0f}")
     
     # Show column information
-    print(f"\nColumns in trade_impacts.csv ({len(trade_impacts.columns)} total):")
+    print(f"\nColumns in trade_impact.csv ({len(trade_impacts.columns)} total):")
     for i, col in enumerate(trade_impacts.columns):
         print(f"  {i+1:2d}. {col}")
     
