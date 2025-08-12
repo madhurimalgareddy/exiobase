@@ -12,7 +12,7 @@ This is an Exiobase data processing project that extracts and transforms multire
 
 - **config.yaml**: Central configuration for countries, trade flows, processing parameters
 - **config_loader.py**: Smart configuration handling with domestic/non-domestic file selection
-- **run_smart_batch.py**: Automated batch processing with progress tracking
+- **main.py**: Automated batch processing with progress tracking
 
 ### Data Flow Architecture
 
@@ -57,7 +57,7 @@ python trade_resource.py
 #### Automated Batch Processing:
 ```bash
 # Process multiple countries automatically
-python run_smart_batch.py
+python main.py
 
 # Update current country manually
 python update_current_country.py CN
@@ -181,7 +181,7 @@ The system implements a three-tier timeout hierarchy for robust processing manag
 ## Best Practices
 
 1. **Always run scripts in the specified order** (dependencies matter)
-2. **Use batch processing** for multiple countries (run_smart_batch.py)
+2. **Use batch processing** for multiple countries (main.py)
 3. **Check runnote.md** for processing details and file usage
 4. **Domestic flows**: Expect longer processing times but comprehensive coverage
 5. **International flows**: Optimized for performance with key environmental impacts
