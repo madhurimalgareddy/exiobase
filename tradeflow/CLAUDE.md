@@ -89,15 +89,31 @@ python update_current_country.py CN
 - **Industries**: 163 detailed sectors aggregated to \~200 standardized codes
 - **Extensions**: Air emissions, employment, energy, land use, materials, water, etc.
 
-### Trade Factors Strategy
-- **Domestic Processing**: Uses all 721 factors (`trade_factor_lg.csv`) because:
-  - Intra-country trade volumes are smaller than international flows
-  - Comprehensive environmental coverage is feasible
-  - Processing time remains manageable (\~1-2 minutes)
-- **International Processing**: Uses 120 selected factors (`trade_factor.csv`) because:
-  - International trade volumes are much larger
-  - Performance optimization necessary
-  - Key environmental impacts still captured
+### Trade Factors Strategy: Two-File System
+
+The project uses a dual-file approach to balance comprehensive environmental coverage with processing performance:
+
+#### **trade_factor.csv** (Small File - 120 Selected Factors)
+- **Used for**: Imports and Exports (international trade flows)
+- **Size**: ~50MB, manageable for all processing scripts
+- **Factor Selection**: Prioritized environmental impacts (CO2, CH4, N2O, employment, energy, water, etc.)
+- **Rationale**: International trade volumes are massive - using all 721 factors would create files >1.5GB
+- **Performance**: Fast processing, no memory issues
+- **Coverage**: Captures key environmental impacts while maintaining system performance
+
+#### **trade_factor_lg.csv** (Large File - All 721 Factors) 
+- **Used for**: Domestic flows (intra-country trade only)
+- **Size**: ~1.5GB when created with `-lag` flag in trade.py
+- **Factor Coverage**: Complete environmental analysis (all extensions: air, water, land, materials, employment, energy)
+- **Rationale**: Domestic trade volumes are smaller, so comprehensive analysis is feasible
+- **Warning**: May cause Node.js memory errors in trade_resource.py processing
+- **Usage**: Only recommended for thorough domestic environmental analysis
+
+#### **Smart File Selection Logic**
+- **config_loader.py** automatically selects the appropriate file:
+  - **Domestic flows**: Uses `trade_factor_lg.csv` if available, falls back to `trade_factor.csv`
+  - **International flows**: Always uses `trade_factor.csv` for performance
+- **Processing scripts** (trade_impact.py, trade_resource.py) detect which file to use based on tradeflow type
 
 ## File Path Conventions
 
@@ -123,10 +139,6 @@ python update_current_country.py CN
 
 ### Core Trade Data
 - **trade.csv**: `trade_id, year, region1, region2, industry1, industry2, amount`
-<!--
-- **industryflow_finaldemand.csv**: Final demand flows (Y matrix data)
-- **industryflow_factor.csv**: Environmental coefficients (F matrix data)
--->
 
 ### Environmental Impact Data  
 - **trade_factor.csv**: Selected factors for imports/exports (120 factors)
