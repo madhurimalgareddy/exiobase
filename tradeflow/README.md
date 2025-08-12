@@ -12,7 +12,7 @@ Later, the 6-character "commodity" sectors can reside in the 5-character "trade"
 
 ## Processing Command
 
-To process the 9 CSV files listed in config.yaml, run the automated batch processing:
+To generate CSV file output configured in config.yaml, run the automated batch processing:
 
 ```bash
 python main.py
