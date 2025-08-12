@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 from config_loader import load_config, get_file_path, get_reference_file_path, print_config_summary
 
-def create_trade_impacts():
+def create_trade_impact():
     """
     Create trade_impact.csv by aggregating environmental impacts per trade transaction
     """
@@ -90,11 +90,11 @@ def create_trade_impacts():
     # Merge all impact data with original trade information
     print("Merging with trade flow data...")
     
-    trade_impacts = trade_df.merge(impact_summary, on='trade_id', how='left')
+    trade_impact = trade_df.merge(impact_summary, on='trade_id', how='left')
     
     # Add extension-based impacts
     if not extension_impacts.empty:
-        trade_impacts = trade_impacts.merge(
+        trade_impact = trade_impact.merge(
             extension_impacts.reset_index(), 
             on='trade_id', 
             how='left'
@@ -104,60 +104,60 @@ def create_trade_impacts():
     if not factor_type_impacts.empty:
         factor_type_impacts_reset = factor_type_impacts.reset_index()
         factor_type_impacts_reset = factor_type_impacts_reset.rename(columns={'index': 'trade_id'})
-        trade_impacts = trade_impacts.merge(
+        trade_impact = trade_impact.merge(
             factor_type_impacts_reset, 
             on='trade_id', 
             how='left'
         )
     
     # Fill NaN values with 0 for impact columns
-    impact_columns = [col for col in trade_impacts.columns if col not in ['trade_id', 'year', 'region1', 'region2', 'industry1', 'industry2', 'amount']]
-    trade_impacts[impact_columns] = trade_impacts[impact_columns].fillna(0)
+    impact_columns = [col for col in trade_impact.columns if col not in ['trade_id', 'year', 'region1', 'region2', 'industry1', 'industry2', 'amount']]
+    trade_impact[impact_columns] = trade_impact[impact_columns].fillna(0)
     
     # Calculate impact intensity (total impact per million USD of trade)
-    trade_impacts['impact_intensity'] = (trade_impacts['total_impact_value'] / trade_impacts['amount']).round(6)
-    trade_impacts['impact_intensity'] = trade_impacts['impact_intensity'].replace([np.inf, -np.inf], 0)
+    trade_impact['impact_intensity'] = (trade_impact['total_impact_value'] / trade_impact['amount']).round(6)
+    trade_impact['impact_intensity'] = trade_impact['impact_intensity'].replace([np.inf, -np.inf], 0)
     
     # Sort by total impact value descending
-    trade_impacts = trade_impacts.sort_values('total_impact_value', ascending=False)
+    trade_impact = trade_impact.sort_values('total_impact_value', ascending=False)
     
     # Save to CSV
-    output_file = get_file_path(config, 'trade_impacts')
-    trade_impacts.to_csv(output_file, index=False)
+    output_file = get_file_path(config, 'trade_impact')
+    trade_impact.to_csv(output_file, index=False)
     
-    print(f"\nCreated trade_impact.csv with {len(trade_impacts)} trade transactions")
+    print(f"\nCreated trade_impact.csv with {len(trade_impact)} trade transactions")
     
     # Display summary statistics
     print(f"\nSummary Statistics:")
-    print(f"Total trade flows: {len(trade_impacts)}")
-    print(f"Trade flows with environmental data: {len(trade_impacts[trade_impacts['factor_count'] > 0])}")
-    print(f"Average factors per trade: {trade_impacts['factor_count'].mean():.1f}")
-    print(f"Total environmental impact value: {trade_impacts['total_impact_value'].sum():,.0f}")
+    print(f"Total trade flows: {len(trade_impact)}")
+    print(f"Trade flows with environmental data: {len(trade_impact[trade_impact['factor_count'] > 0])}")
+    print(f"Average factors per trade: {trade_impact['factor_count'].mean():.1f}")
+    print(f"Total environmental impact value: {trade_impact['total_impact_value'].sum():,.0f}")
     
     print(f"\nTop 10 trade flows by total environmental impact:")
-    top_impacts = trade_impacts.head(10)[['trade_id', 'region1', 'industry1', 'amount', 'total_impact_value', 'factor_count']]
+    top_impacts = trade_impact.head(10)[['trade_id', 'region1', 'industry1', 'amount', 'total_impact_value', 'factor_count']]
     print(top_impacts.to_string(index=False))
     
     print(f"\nContext breakdown (sum of all impacts):")
-    extension_cols = [col for col in trade_impacts.columns if col in ['air_emissions', 'water', 'land', 'material', 'energy', 'employment']]
+    extension_cols = [col for col in trade_impact.columns if col in ['air_emissions', 'water', 'land', 'material', 'energy', 'employment']]
     if extension_cols:
-        extension_summary = trade_impacts[extension_cols].sum().sort_values(ascending=False)
+        extension_summary = trade_impact[extension_cols].sum().sort_values(ascending=False)
         for extension, value in extension_summary.head(10).items():
             print(f"  {extension}: {value:,.0f}")
     
     print(f"\nMajor factor type breakdown:")
-    factor_type_cols = [col for col in trade_impacts.columns if col.endswith('_total')]
+    factor_type_cols = [col for col in trade_impact.columns if col.endswith('_total')]
     if factor_type_cols:
-        factor_summary = trade_impacts[factor_type_cols].sum().sort_values(ascending=False)
+        factor_summary = trade_impact[factor_type_cols].sum().sort_values(ascending=False)
         for factor_type, value in factor_summary.items():
             print(f"  {factor_type}: {value:,.0f}")
     
     # Show column information
-    print(f"\nColumns in trade_impact.csv ({len(trade_impacts.columns)} total):")
-    for i, col in enumerate(trade_impacts.columns):
+    print(f"\nColumns in trade_impact.csv ({len(trade_impact.columns)} total):")
+    for i, col in enumerate(trade_impact.columns):
         print(f"  {i+1:2d}. {col}")
     
-    return trade_impacts
+    return trade_impact
 
 if __name__ == "__main__":
-    create_trade_impacts()
+    create_trade_impact()

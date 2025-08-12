@@ -215,8 +215,8 @@ def create_split_resources():
     # Save all files
     file_mapping = {
         'employment': 'trade_employment',
-        'resources': 'trade_resources', 
-        'materials': 'trade_materials'
+        'resources': 'trade_resource', 
+        'materials': 'trade_material'
     }
     
     for category, df in output_files.items():
