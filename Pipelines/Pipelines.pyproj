@@ -22,7 +22,11 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Functions\insert_postgres - Copy.py" />
     <Compile Include="Functions\insert_postgres.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Functions\spark_insert_postgres.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Pipelines\Imports.py" />
