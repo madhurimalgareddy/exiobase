@@ -190,50 +190,34 @@ The system implements a three-tier timeout hierarchy for robust processing manag
 
 The scripts are run in this specific order to ensure proper data dependencies:
 
-create\_full_trade_factor.py
-
-    create_full_trade_factor.py
-
-### 1. **trade.py** - Core Trade Flow Extraction
-- **Input**: Exiobase Z-matrix (inter-industry flows)
-- **Output**: `industry.csv`,`factor.csv`, trade_factor.csv`, `trade_factor_lg.csv` - Main trade flow data
-- **Purpose**: Extracts trade flows based on config (imports/exports/domestic)
-- **Key Feature**: For domestic flows, extracts intra-country flows (country→same country)
+### 1. **trade.py** - Primary Data Extraction and Processing
+- **Input**: Exiobase Z-matrix (inter-industry flows) and F-matrices (environmental extensions)
+- **Output**: 
+  - `trade.csv` - Core trade flows (trade_id, year, region1, region2, industry1, industry2, amount)
+  - `industry.csv` - Industry sector mapping with 5-character codes
+  - `factor.csv` - Environmental factor definitions (721 factors)
+  - `trade_factor.csv` - Environmental coefficients (120 selected factors for imports/exports)
+  - `trade_factor_lg.csv` - All environmental coefficients (721 factors for domestic flows)
+- **Purpose**: Primary script that extracts trade flows and creates environmental impact coefficients
+- **Key Features**: 
+  - Handles imports, exports, and domestic flows based on config
+  - Creates both small (120 factors) and large (721 factors) coefficient files
+  - For domestic flows, extracts intra-country flows (country→same country)
 - **Processing time**: \~2-3 minutes per country
 
-<!--
-### 2. **industryflow_finaldemand.py** - Final Demand Flows  
-- **Input**: Exiobase Y-matrix (final demand)
-- **Output**: `industryflow_finaldemand.csv`
-- **Purpose**: Captures final consumption, government spending, investment
-- **Processing time**: \~1-2 minutes per country
-
-### 3. **industryflow_factor.py** - Environmental Factor Coefficients
-- **Input**: Exiobase F-matrices (environmental extensions)
-- **Output**: `industryflow_factor.csv` 
-- **Purpose**: Extracts environmental intensity coefficients per industry
-- **Processing time**: \~1-2 minutes per country
-
-### 4. **create\_full_trade_factor.py** - Environmental Impact Coefficients
-- **Input**: `trade.csv` + `factor.csv`
-- **Output**: 
-  - **Domestic**: Both `trade_factor.csv` (120 factors) AND `trade_factor_lg.csv` (721 factors)
-  - **Imports/Exports**: Only `trade_factor.csv` (120 factors)
-- **Purpose**: Links trade flows to environmental impacts
-- **Key Innovation**: Domestic flows use `_lg` version since intra-country volumes are smaller
-- **Processing time**: \~1-2 minutes per country
--->
-
-### 5. **trade_impact.py** - Aggregated Environmental Impacts
-- **Input**: `trade_factor_lg.csv` (domestic) or `trade_factor.csv` (others)
+### 2. **trade_impact.py** - Aggregated Environmental Impacts
+- **Input**: `trade.csv` + `trade_factor_lg.csv` (domestic) or `trade_factor.csv` (others)
 - **Output**: `trade_impact.csv`
 - **Purpose**: Comprehensive environmental impact summary per trade transaction
 - **Processing time**: \~10-15 seconds per country
 
-### 6. **trade_resource.py** - Resource Analysis with 3 factor table outputs (for optimal sizes and processing time)
+### 3. **trade_resource.py** - Specialized Resource Analysis
 - **Input**: `trade_factor_lg.csv` or `trade_factor.csv`
-- **Output**: `trade_employment.csv`, `trade_resource.csv`, `trade_material.csv`
-- **Purpose**: Specialized analysis of employment, resources, and materials
+- **Output**: 
+  - `trade_employment.csv` - Employment impact analysis
+  - `trade_resource.csv` - Resource use analysis (water, energy, land)
+  - `trade_material.csv` - Material flow analysis
+- **Purpose**: Creates three specialized output files optimized for size and processing performance
 - **Processing time**: \~5-15 seconds per country
 
 ## Troubleshooting
