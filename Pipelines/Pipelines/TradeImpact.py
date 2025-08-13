@@ -54,9 +54,18 @@ for ext_name in extensions_to_use:
 
     # Step 5: Optional - filter out 0 flows
     Z_stacked = Z_stacked[Z_stacked['flow'] != 0]
-    Z_stacked = Z_stacked.head(1000)
+    #Z_stacked = Z_stacked.head(1000)
+    ########## .head(1000)
+    
+    Z_stacked = Z_stacked
+    
     # Step 5: Merge Z with extension factors
-    df = Z_stacked.merge(df_ext.head(1000), left_on=['from_region', 'from_product'], right_on=['region', 'product'], how='left')
+    
+    
+    #df = Z_stacked.merge(df_ext.head(1000), left_on=['from_region', 'from_product'], right_on=['region', 'product'], how='left')
+    ######### df_ext.head(1000) 
+    
+    df = Z_stacked.merge(df_ext, left_on=['from_region', 'from_product'], right_on=['region', 'product'], how='left')
     df.drop(columns=['region', 'product'], inplace=True)
 
     # Step 6: Calculate impact = flow × factor value
