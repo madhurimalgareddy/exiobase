@@ -1,6 +1,6 @@
 # Primary tables: <span style="color:#aaa">trade, factor, industry</span>
 
-Table naming designed for 3rd graders. [View output tables](https://github.com/ModelEarth/trade-data/tree/main/year)
+Table naming designed for 3rd graders. [View Report Sample](../../profile/footprint/sample.html) from [Exiobase .csv output](https://github.com/ModelEarth/trade-data/tree/main/year) and [US State Data](../../useeio.js/footprint/)
 
 **The trade_id field** in trade.csv relates 5 values (year, region1, region2, industry1, industry2) to multiple impact factors for each trade row.
 
@@ -12,7 +12,7 @@ Later, the 6-character "commodity" sectors can reside in the 5-character "trade"
 
 ## Processing Command
 
-To generate CSV file output configured in config.yaml, run the automated batch processing:
+To generate CSV file output configured in config.yaml, run the automated batch processing for [our related project](https://github.com/ModelEarth/projects/issues/30):
 
 ```bash
 python main.py
