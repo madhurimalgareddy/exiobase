@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Industry Factor</title>
+  <link rel="stylesheet" href="viz-styles.css">
+</head>
+<body>
+
+<div id="multiSelect">
+  <div class="dropdown" id="years-dropdown">
+      
+      <div class="select-box">
+        <span>Select options</span>
+        <i class="arrow"></i>
+      </div>
+
+      <div class="options">
+
+      </div>
+    </div>
+
+
+    <div class="dropdown" id="factors-dropdown">
+      
+      <div class="select-box">
+        <span>Select options</span>
+        <i class="arrow"></i>
+      </div>
+
+      <div class="options">
+
+      </div>
+    </div>
+
+
+  <div class="dropdown" id="extensions-dropdown">
+      
+      <div class="select-box">
+        <span>Select options</span>
+        <i class="arrow"></i>
+      </div>
+
+      <div class="options">
+
+      </div>
+    </div>
+
+
+</div>
+
+
+<button id="searchBtn">Search</button>
+<div id="results"></div>
+
+
+
+  <script type="module">
+
+
+  const dropdown = document.getElementById('multiSelect');
+  const selectBox = dropdown.querySelector('.select-box span');
+
+
+
+///
+/// Years section
+///
+  const yearsContainer = dropdown.querySelector('#years-dropdown .options');
+
+  const yearsUrl = "https://raw.githubusercontent.com/garmartirosy/exiobase/main/Filters/Common/years.json";
+  const yResponse = await fetch(yearsUrl);
+  const years = await yResponse.json();
+
+  
+    // Dynamically create checkboxes from data list
+    years.forEach(item => {
+      const label = document.createElement('label');
+      const checkbox = document.createElement('input');
+      checkbox.type = "checkbox";
+      checkbox.value = item;
+      label.appendChild(checkbox);
+      label.append(" " + item);
+      yearsContainer.appendChild(label);
+    });
+
+
+
+///
+/// Factors section
+///
+
+  const factorsUrl = "https://raw.githubusercontent.com/garmartirosy/exiobase/main/Filters/Common/years.json";
+  const fResponse = await fetch(factorsUrl);
+  const factors = await fResponse.json();
+
+  const factorsContainer = dropdown.querySelector('#factors-dropdown .options');
+
+
+      // Dynamically create checkboxes from data list
+    factors.forEach(item => {
+      const label = document.createElement('label');
+      const checkbox = document.createElement('input');
+      checkbox.type = "checkbox";
+      checkbox.value = item;
+      label.appendChild(checkbox);
+      label.append(" " + item);
+      factorsContainer.appendChild(label);
+    });
+
+
+
+
+///
+/// extensions section
+/// 
+
+  const extensionsUrl = "https://raw.githubusercontent.com/garmartirosy/exiobase/main/Filters/Common/years.json";
+  const eResponse = await fetch(extensionsUrl);
+  const extensions = await eResponse.json();
+
+  const extensionsContainer = dropdown.querySelector('#extensions-dropdown .options');
+
+
+      // Dynamically create checkboxes from data list
+    extensions.forEach(item => {
+      const label = document.createElement('label');
+      const checkbox = document.createElement('input');
+      checkbox.type = "checkbox";
+      checkbox.value = item;
+      label.appendChild(checkbox);
+      label.append(" " + item);
+      extensionsContainer.appendChild(label);
+    });
+
+
+
+
+///
+/// Common for all
+///
+
+/***
+
+ The wireDropdown is a function that dynamicly handles the functionality for all the
+ given dropdowns that exist on the page (eg. years, factors, etc.)
+ Sets up a dropdown: handles open/close toggle, updates label text when checkboxes change,
+ and closes the menu if the user clicks outside of it.
+
+
+ add wireDropdown(document.getElementById('{dropdown name}-dropdown'));
+ to make it work for new dorpdowns
+
+***/
+function wireDropdown(dropdown) {
+    const box = dropdown.querySelector('.select-box');
+    const labelSpan = dropdown.querySelector('.select-box span');
+    const options = dropdown.querySelector('.options');
+
+    // open/close this dropdown only
+    box.addEventListener('click', () => {
+      // close others
+      document.querySelectorAll('.dropdown').forEach(dd => {
+        if (dd !== dropdown) dd.classList.remove('active');
+      });
+      dropdown.classList.toggle('active');
+  });
+
+  // event delegation: one handler for all current/future checkboxes
+  options.addEventListener('change', (e) => {
+    if (e.target.matches('input[type="checkbox"]')) {
+      const selected = Array.from(options.querySelectorAll('input[type="checkbox"]:checked'))
+        .map(c => c.value);
+
+      if (!selected.length) {
+        labelSpan.textContent = 'Select options';
+      } else if (selected.length < 4) {
+        labelSpan.textContent = selected.join(', ') + (selected.length === 3 ? ' ...' : '');
+      } else {
+        labelSpan.textContent = `${selected.length} selected`;
+      }
+    }
+  });
+
+  // close if clicked outside
+  document.addEventListener('click', (e) => {
+    if (!dropdown.contains(e.target)) dropdown.classList.remove('active');
+  });
+}
+
+// call this AFTER you’ve appended the checkbox inputs
+wireDropdown(document.getElementById('years-dropdown'));
+wireDropdown(document.getElementById('factors-dropdown'));
+wireDropdown(document.getElementById('extensions-dropdown'));
+
+
+
+
+  </script>
+
+
+
+<script type="module">
+
+/*
+
+  This part is responsible for sending the selected values(eg. years, extensions, etc.)
+  as parameters to the database.
+
+*/
+
+async function fetchData() {
+  const years = Array.from(document.querySelectorAll('#years-dropdown input:checked'))
+                     .map(c => parseInt(c.value));
+  const extensions = Array.from(document.querySelectorAll('#extensions-dropdown input:checked'))
+                          .map(c => c.value);
+  const factors = Array.from(document.querySelectorAll('#factors-dropdown input:checked'))
+                       .map(c => c.value);
+
+  const body = { years, extensions, factors };
+
+  const response = await fetch('/api/getIndustryFactor', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+
+  const data = await response.json();
+  console.log(data);
+}
+
+
+
+</script>
+
+
+<script type="module">
+const API_URL = 'https://function-app-new-me.azurewebsites.net/api/IndustryFactor_HTTP'; // your function
+
+async function fetchData() {
+  const btn = document.getElementById('searchBtn');
+  btn.disabled = true; btn.textContent = 'Searching...';
+
+  const years = Array.from(document.querySelectorAll('#years-dropdown input:checked')).map(c => +c.value);
+  const extensions = Array.from(document.querySelectorAll('#extensions-dropdown input:checked')).map(c => c.value);
+  const factors = Array.from(document.querySelectorAll('#factors-dropdown input:checked')).map(c => c.value);
+
+  try {
+    const resp = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ years, extensions, factors }) // empty arrays = no filter (server treats as null)
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const rows = await resp.json();
+    renderTable(rows);
+  } catch (err) {
+    console.error(err);
+    document.getElementById('results').innerHTML = `<p style="color:#c00">Error: ${err.message}</p>`;
+  } finally {
+    btn.disabled = false; btn.textContent = 'Search';
+  }
+}
+
+// tiny table renderer (swap with Tabulator later)
+function renderTable(rows) {
+  const el = document.getElementById('results');
+  if (!rows?.length) { el.innerHTML = '<p>No rows found.</p>'; return; }
+
+  const cols = ['country','sector','factor','year','value','extension'];
+  const thead = `<thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>`;
+  const tbody = `<tbody>${rows.map(r => `<tr>${cols.map(c => `<td>${r[c] ?? ''}</td>`).join('')}</tr>`).join('')}</tbody>`;
+  el.innerHTML = `<div style="overflow:auto; max-height:60vh;"><table border="1" cellspacing="0" cellpadding="6">${thead}${tbody}</table></div>`;
+}
+
+// wire the button
+document.getElementById('searchBtn').addEventListener('click', fetchData);
+
+// optional: run on Enter key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') fetchData();
+});
+</script>
+
+
+</body>
+</html>
