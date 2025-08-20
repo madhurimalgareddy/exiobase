@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Smart batch processing with enhanced country list handling
 Supports: "all", "default", auto-populate current, cleanup when done
@@ -10,6 +11,16 @@ import time
 import yaml
 from pathlib import Path
 from config_loader import load_config
+
+# Set UTF-8 encoding for Windows console
+import os
+if os.name == 'nt':  # Windows
+    import locale
+    # Try to set UTF-8 locale
+    try:
+        locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+    except:
+        pass
 
 def get_existing_countries(year):
     """Get list of countries that have folders in the year directory"""
@@ -40,7 +51,7 @@ def resolve_country_list(config):
     year = config['YEAR']
     
     if country_list.lower() == 'all':
-        print("🌍 Resolving 'all' - checking existing country folders...")
+        print("[WORLD] Resolving 'all' - checking existing country folders...")
         existing = get_existing_countries(year)
         if existing:
             print(f"Found {len(existing)} existing countries: {', '.join(existing)}")
@@ -50,13 +61,13 @@ def resolve_country_list(config):
             return get_default_countries()
     
     elif country_list.lower() == 'default':
-        print("🎯 Using default country list")
+        print("[TARGET] Using default country list")
         return get_default_countries()
     
     else:
         # Parse comma-separated list
         countries = [c.strip() for c in country_list.split(',')]
-        print(f"📋 Using explicit country list: {', '.join(countries)}")
+        print(f"[LIST] Using explicit country list: {', '.join(countries)}")
         return countries
 
 def is_country_completed(country, tradeflow, year):
@@ -79,8 +90,8 @@ def filter_incomplete_countries(countries, tradeflow, year):
             incomplete.append(country)
     
     if completed:
-        print(f"🔄 Resume mode: Found {len(completed)} already completed countries: {', '.join(completed)}")
-        print(f"📋 Processing {len(incomplete)} remaining countries: {', '.join(incomplete) if incomplete else 'None'}")
+        print(f"[RELOAD] Resume mode: Found {len(completed)} already completed countries: {', '.join(completed)}")
+        print(f"[LIST] Processing {len(incomplete)} remaining countries: {', '.join(incomplete) if incomplete else 'None'}")
     
     return incomplete, completed
 
@@ -135,10 +146,10 @@ def run_country_processing(country, tradeflow, batch_start_time, batch_timeout=1
     # Check if batch timeout exceeded before starting country
     elapsed_batch_time = time.time() - batch_start_time
     if elapsed_batch_time >= batch_timeout:
-        print(f"⏰ BATCH TIMEOUT: {elapsed_batch_time/3600:.1f} hours elapsed, stopping before {country}")
+        print(f"[TIME] BATCH TIMEOUT: {elapsed_batch_time/3600:.1f} hours elapsed, stopping before {country}")
         return False
     print(f"\n{'='*80}")
-    print(f"🏠 STARTING {tradeflow.upper()} PROCESSING FOR {country}")
+    print(f"[HOME] STARTING {tradeflow.upper()} PROCESSING FOR {country}")
     print(f"{'='*80}")
     
     start_time = time.time()
@@ -159,17 +170,17 @@ def run_country_processing(country, tradeflow, batch_start_time, batch_timeout=1
         elapsed_country_time = time.time() - start_time
         
         if elapsed_batch_time >= batch_timeout:
-            print(f"⏰ BATCH TIMEOUT: {elapsed_batch_time/3600:.1f} hours elapsed, stopping at {script}")
+            print(f"[TIME] BATCH TIMEOUT: {elapsed_batch_time/3600:.1f} hours elapsed, stopping at {script}")
             break
             
         if elapsed_country_time >= country_timeout:
-            print(f"⏰ COUNTRY TIMEOUT: {elapsed_country_time/60:.1f} minutes elapsed for {country}, stopping at {script}")
+            print(f"[TIME] COUNTRY TIMEOUT: {elapsed_country_time/60:.1f} minutes elapsed for {country}, stopping at {script}")
             break
             
         script_start = time.time()
         remaining_country_time = (country_timeout - elapsed_country_time) / 60
-        print(f"\n▶️  [{i}/{len(scripts)}] Running {script} for {country}...")
-        print(f"   ⏱️  Country time remaining: {remaining_country_time:.1f} minutes")
+        print(f"\n[PLAY]  [{i}/{len(scripts)}] Running {script} for {country}...")
+        print(f"   [TIMER]  Country time remaining: {remaining_country_time:.1f} minutes")
         
         try:
             result = subprocess.run([
@@ -179,28 +190,28 @@ def run_country_processing(country, tradeflow, batch_start_time, batch_timeout=1
             script_time = time.time() - script_start
             
             if result.returncode == 0:
-                print(f"✅ {script} completed in {script_time:.1f}s")
+                print(f"[OK] {script} completed in {script_time:.1f}s")
                 # Show key output lines
                 if result.stdout:
                     lines = result.stdout.strip().split('\n')
                     for line in lines[-3:]:
-                        if any(keyword in line for keyword in ['✅', 'Created', 'Total', 'completed', 'factors']):
-                            print(f"   📊 {line}")
+                        if any(keyword in line for keyword in ['[OK]', 'Created', 'Total', 'completed', 'factors']):
+                            print(f"   [CHART] {line}")
                 success_count += 1
             else:
-                print(f"❌ {script} failed after {script_time:.1f}s")
+                print(f"[ERROR] {script} failed after {script_time:.1f}s")
                 if result.stderr:
                     error_lines = result.stderr.strip().split('\n')
-                    print(f"   ⚠️  Error: {error_lines[-1] if error_lines else 'Unknown error'}")
+                    print(f"   [WARN]  Error: {error_lines[-1] if error_lines else 'Unknown error'}")
                 break
                 
         except subprocess.TimeoutExpired:
             script_time = time.time() - script_start
-            print(f"⏰ {script} timed out after {script_time:.1f}s (20 min limit)")
+            print(f"[TIME] {script} timed out after {script_time:.1f}s (20 min limit)")
             break
         except Exception as e:
             script_time = time.time() - script_start
-            print(f"❌ {script} error after {script_time:.1f}s: {e}")
+            print(f"[ERROR] {script} error after {script_time:.1f}s: {e}")
             break
     
     total_time = time.time() - start_time
@@ -209,32 +220,32 @@ def run_country_processing(country, tradeflow, batch_start_time, batch_timeout=1
     
     # Enhanced completion feedback
     print(f"\n{'='*80}")
-    print(f"🎯 {country} {tradeflow.upper()} PROCESSING COMPLETE")
+    print(f"[TARGET] {country} {tradeflow.upper()} PROCESSING COMPLETE")
     print(f"{'='*80}")
-    print(f"⏱️  Total country time: {minutes}m {seconds}s (limit: {country_timeout/60:.0f} minutes)")
-    print(f"✅ Scripts completed: {success_count}/{len(scripts)}")
+    print(f"[TIMER]  Total country time: {minutes}m {seconds}s (limit: {country_timeout/60:.0f} minutes)")
+    print(f"[OK] Scripts completed: {success_count}/{len(scripts)}")
     
     # Show completion percentage
     completion_pct = (success_count / len(scripts)) * 100
-    print(f"📊 Completion rate: {completion_pct:.1f}%")
+    print(f"[CHART] Completion rate: {completion_pct:.1f}%")
     
     # Enhanced status message
     if success_count == len(scripts):
-        print(f"🎉 {country} {tradeflow} processing FULLY SUCCESSFUL!")
-        print(f"📁 Generated: trade_factor.csv + trade_factor_lg.csv (721 factors)")
+        print(f"[SUCCESS] {country} {tradeflow} processing FULLY SUCCESSFUL!")
+        print(f"[FOLDER] Generated: trade_factor.csv + trade_factor_lg.csv (721 factors)")
         
         # Create runnote.md for successful completion
         create_runnote(country, tradeflow, start_time, total_time, success_count, len(scripts))
     else:
-        print(f"⚠️  {country} {tradeflow} processing PARTIALLY COMPLETED ({success_count}/{len(scripts)} scripts)")
+        print(f"[WARN]  {country} {tradeflow} processing PARTIALLY COMPLETED ({success_count}/{len(scripts)} scripts)")
         if total_time >= country_timeout * 0.9:
-            print(f"⏰ Country approached time limit: {total_time/60:.1f}/{country_timeout/60:.0f} minutes")
+            print(f"[TIME] Country approached time limit: {total_time/60:.1f}/{country_timeout/60:.0f} minutes")
     
     # Time efficiency feedback
     if total_time < 300:  # Less than 5 minutes
-        print(f"🚀 Fast processing - completed in under 5 minutes!")
+        print(f"[START] Fast processing - completed in under 5 minutes!")
     elif total_time > 600:  # More than 10 minutes  
-        print(f"🐌 Slower processing - took over 10 minutes")
+        print(f"[SLOW] Slower processing - took over 10 minutes")
     
     return success_count == len(scripts)
 
@@ -246,14 +257,14 @@ def main():
     # Handle comma-separated tradeflows
     if ',' in tradeflow_config:
         tradeflows = [tf.strip() for tf in tradeflow_config.split(',')]
-        print(f"📋 Processing multiple tradeflows: {', '.join(tradeflows)}")
+        print(f"[LIST] Processing multiple tradeflows: {', '.join(tradeflows)}")
     else:
         tradeflows = [tradeflow_config]
     
     # Process each tradeflow separately
     for tradeflow in tradeflows:
         print(f"\n{'='*100}")
-        print(f"🚀 STARTING BATCH PROCESSING FOR TRADEFLOW: {tradeflow.upper()}")
+        print(f"[START] STARTING BATCH PROCESSING FOR TRADEFLOW: {tradeflow.upper()}")
         print(f"{'='*100}")
         
         # Temporarily update config file for this tradeflow
@@ -275,7 +286,7 @@ def main():
 
 def process_tradeflow(config, tradeflow, all_countries, countries, completed_countries):
     """Process a single tradeflow for all countries"""
-    print(f"\n🚀 STARTING SMART BATCH PROCESSING")
+    print(f"\n[START] STARTING SMART BATCH PROCESSING")
     print(f"Trade Flow: {tradeflow}")
     print(f"All countries: {', '.join(all_countries)}")
     print(f"Countries to process: {', '.join(countries) if countries else 'None - All completed!'}")
@@ -285,16 +296,16 @@ def process_tradeflow(config, tradeflow, all_countries, countries, completed_cou
     
     # If all countries are completed, show summary and exit
     if not countries:
-        print(f"\n🎉 ALL COUNTRIES ALREADY COMPLETED!")
-        print(f"✅ Completed countries: {', '.join(completed_countries)}")
-        print(f"🧹 Cleaning up config - removing current country setting...")
+        print(f"\n[SUCCESS] ALL COUNTRIES ALREADY COMPLETED!")
+        print(f"[OK] Completed countries: {', '.join(completed_countries)}")
+        print(f"[CLEAN] Cleaning up config - removing current country setting...")
         remove_config_key('COUNTRY.current')
         return
     
     batch_start = time.time()
     batch_timeout = 18000  # 5 hours in seconds
     country_timeout = 3600  # 1 hour per country (60 minutes)
-    print(f"⏰ Per-country time limit: {country_timeout/60:.0f} minutes")
+    print(f"[TIME] Per-country time limit: {country_timeout/60:.0f} minutes")
     results = {}
     
     # Initialize results for completed countries as successful
@@ -305,18 +316,18 @@ def process_tradeflow(config, tradeflow, all_countries, countries, completed_cou
         # Check batch timeout before starting each country
         elapsed_batch_time = time.time() - batch_start
         if elapsed_batch_time >= batch_timeout:
-            print(f"\n⏰ BATCH TIMEOUT REACHED: {elapsed_batch_time/3600:.1f} hours elapsed")
-            print(f"🛑 Stopping processing. Remaining countries: {', '.join(countries[i-1:])}")
+            print(f"\n[TIME] BATCH TIMEOUT REACHED: {elapsed_batch_time/3600:.1f} hours elapsed")
+            print(f"[STOP] Stopping processing. Remaining countries: {', '.join(countries[i-1:])}")
             # Mark remaining countries as not processed
             for remaining_country in countries[i-1:]:
                 results[remaining_country] = False
             break
             
         remaining_time = (batch_timeout - elapsed_batch_time) / 3600
-        print(f"\n{'🔄' * 20}")
+        print(f"\n{'[RELOAD]' * 20}")
         print(f"PROCESSING COUNTRY {i}/{len(countries)}: {country}")
-        print(f"⏰ Batch time remaining: {remaining_time:.1f} hours")
-        print(f"{'🔄' * 20}")
+        print(f"[TIME] Batch time remaining: {remaining_time:.1f} hours")
+        print(f"{'[RELOAD]' * 20}")
         
         country_success = run_country_processing(country, tradeflow, batch_start, batch_timeout, country_timeout)
         results[country] = country_success
@@ -326,7 +337,7 @@ def process_tradeflow(config, tradeflow, all_countries, countries, completed_cou
             break
     
     # Clean up - remove current from config when done
-    print(f"\n🧹 Cleaning up config - removing current country setting...")
+    print(f"\n[CLEAN] Cleaning up config - removing current country setting...")
     remove_config_key('COUNTRY.current')
     
     # Final batch summary
@@ -338,32 +349,32 @@ def process_tradeflow(config, tradeflow, all_countries, countries, completed_cou
     failed = [c for c, success in results.items() if not success]
     
     print(f"\n{'='*80}")
-    print(f"🏁 SMART BATCH PROCESSING COMPLETE FOR {tradeflow.upper()}")
+    print(f"[FINISH] SMART BATCH PROCESSING COMPLETE FOR {tradeflow.upper()}")
     print(f"{'='*80}")
-    print(f"⏱️  Total batch time: {batch_minutes}m {batch_seconds}s (of 5 hour limit)")
+    print(f"[TIMER]  Total batch time: {batch_minutes}m {batch_seconds}s (of 5 hour limit)")
     if batch_time >= batch_timeout * 0.9:  # If we used 90%+ of time limit
-        print(f"⚠️  Close to time limit: {batch_time/3600:.1f}/5.0 hours used")
-    print(f"✅ All successful countries: {', '.join(successful) if successful else 'None'}")
+        print(f"[WARN]  Close to time limit: {batch_time/3600:.1f}/5.0 hours used")
+    print(f"[OK] All successful countries: {', '.join(successful) if successful else 'None'}")
     if failed:
-        print(f"❌ Failed countries: {', '.join(failed)}")
+        print(f"[ERROR] Failed countries: {', '.join(failed)}")
     if completed_countries:
-        print(f"🔄 Previously completed: {', '.join(completed_countries)}")
+        print(f"[RELOAD] Previously completed: {', '.join(completed_countries)}")
         print(f"🆕 Newly processed: {', '.join([c for c in countries if c in successful])}")
     total_countries = len(all_countries)
-    print(f"📊 Overall success rate: {len(successful)}/{total_countries} ({len(successful)/total_countries*100:.1f}%)")
+    print(f"[CHART] Overall success rate: {len(successful)}/{total_countries} ({len(successful)/total_countries*100:.1f}%)")
     
     # Show final file counts
-    print(f"\n📁 Final output summary:")
+    print(f"\n[FOLDER] Final output summary:")
     year = config['YEAR']
     for country in all_countries:
         try:
             result = subprocess.run(['find', f'year/{year}/{country}/{tradeflow}', '-name', '*.csv', '-type', 'f'], 
                                   capture_output=True, text=True)
             file_count = len(result.stdout.strip().split('\n')) if result.stdout.strip() else 0
-            status = "✅" if results[country] else "⚠️ "
+            status = "[OK]" if results[country] else "[WARN] "
             print(f"  {status} {country}: {file_count} CSV files created")
         except:
-            print(f"  ❓ {country}: Unable to count files")
+            print(f"  [QUESTION] {country}: Unable to count files")
 
 def create_runnote(country, tradeflow, start_time, total_time, success_count, total_scripts):
     """Create runnote.md file to mark successful completion"""
@@ -403,7 +414,7 @@ def create_runnote(country, tradeflow, start_time, total_time, success_count, to
         if existing_files:
             files_section += "### Files Successfully Created:\n"
             for filename in existing_files:
-                files_section += f"- ✅ {filename}\n"
+                files_section += f"- [OK] {filename}\n"
             
             if missing_files:
                 files_section += "\n"
@@ -411,7 +422,7 @@ def create_runnote(country, tradeflow, start_time, total_time, success_count, to
         if missing_files:
             files_section += "### Files Not Created:\n"
             for filename in missing_files:
-                files_section += f"- ❌ {filename}\n"
+                files_section += f"- [ERROR] {filename}\n"
         
         files_section += "\n"
     
@@ -421,16 +432,16 @@ def create_runnote(country, tradeflow, start_time, total_time, success_count, to
     truly_successful = scripts_successful and files_created
     
     if truly_successful:
-        status = "✅ FULLY SUCCESSFUL"
+        status = "[OK] FULLY SUCCESSFUL"
         completion_note = "successful completion"
     elif scripts_successful and not files_created:
-        status = "⚠️ SCRIPTS COMPLETED - NO FILES CREATED"
+        status = "[WARN] SCRIPTS COMPLETED - NO FILES CREATED"
         completion_note = "script completion without file output"
     elif files_created and not scripts_successful:
-        status = "⚠️ PARTIALLY COMPLETED - SOME FILES CREATED"
+        status = "[WARN] PARTIALLY COMPLETED - SOME FILES CREATED"
         completion_note = "partial completion with some file output"
     else:
-        status = "❌ FAILED"
+        status = "[ERROR] FAILED"
         completion_note = "failed processing"
     
     # Format duration section only if we have meaningful duration
@@ -455,7 +466,7 @@ Generated by main.py automated batch processing.
     with open(runnote_path, 'w') as f:
         f.write(runnote_content)
     
-    print(f"📝 Created runnote.md at: {runnote_path}")
+    print(f"[NOTE] Created runnote.md at: {runnote_path}")
     return runnote_path
 
 if __name__ == "__main__":
