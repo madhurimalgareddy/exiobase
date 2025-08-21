@@ -1,0 +1,127 @@
+/* Global reset for consistent box sizing */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: #f5f5f5;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+
+/* Container for multiple dropdowns */
+#multiSelect {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;              /* space between dropdowns */
+  align-items: flex-start;
+}
+
+/* Dropdown wrapper */
+.dropdown {
+  position: relative;
+  width: 250px;
+}
+
+/* Select box (the part you click) */
+.dropdown .select-box {
+  background: white;
+  border: 2px solid #4A90E2;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  outline: none; /* we’ll style focus manually */
+  transition: box-shadow 0.2s;
+}
+
+/* Hover/focus states */
+.select-box:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.select-box:focus,
+.select-box:focus-visible {
+  outline: 3px solid rgba(74,144,226,0.4);
+  outline-offset: 2px;
+}
+
+/* Dropdown menu (hidden by default) */
+.dropdown .options {
+  position: absolute;
+  top: 110%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 2px solid #4A90E2;
+  border-radius: 8px;
+  margin-top: 5px;
+  max-height: 200px;
+  overflow-y: auto;
+  display: none;
+  flex-direction: column;
+  box-shadow: 0 5px 10px rgba(0,0,0,0.15);
+  z-index: 1000; /* make sure it overlays other UI */
+  scroll-behavior: smooth; /* smooth scroll inside */
+}
+
+/* Show menu when dropdown is active */
+.dropdown.active .options {
+  display: flex;
+}
+
+/* Option rows */
+.dropdown .options label {
+  padding: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Hover on option row */
+.dropdown .options label:hover {
+  background: #f0f8ff;
+}
+
+/* Checkboxes style (modern browsers only) */
+.dropdown .options input[type="checkbox"] {
+  accent-color: #4A90E2;
+}
+
+/* Disabled option style */
+.dropdown .options input[disabled] + span,
+.dropdown .options label[aria-disabled="true"] {
+  color: #999;
+  cursor: not-allowed;
+}
+
+/* Arrow indicator */
+.dropdown .arrow {
+  border: solid #4A90E2;
+  border-width: 0 3px 3px 0;
+  padding: 5px;
+  transform: rotate(45deg);
+  transition: transform 0.3s;
+}
+
+/* Arrow rotation when open */
+.dropdown.active .arrow {
+  transform: rotate(-135deg);
+}
+
+/* Mobile adjustments */
+@media (max-width: 600px) {
+  .dropdown { width: 100%; }
+  .dropdown .options { max-height: 260px; }
+}
