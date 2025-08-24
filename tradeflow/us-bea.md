@@ -2,7 +2,7 @@
 
 ## Overview
 
-Create a comprehensive US-BEA data integration system that combines Exiobase MRIO data with US Bureau of Economic Analysis API data to generate relational trade flow tables. This system extends our existing exiobase/tradeflow architecture to include detailed US trade analysis with enhanced state-level and industry-specific insights.
+Create a comprehensive US-BEA data integration system that combines Exiobase MRIO data with US Bureau of Economic Analysis API data to generate relational trade flow tables. This system extends our existing exiobase/tradeflow architecture to include detailed US trade analysis with enhanced state-level and industry-specific insights. Developed by referencing [US generate_import_factors.py](https://github.com/USEPA/USEEIO/tree/master/import_emission_factors).
 
 ## Configuration Settings
 
