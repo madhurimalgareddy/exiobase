@@ -31,7 +31,7 @@ class BEAAPIClient:
         Get international trade in goods and services data
         
         Args:
-            year: Data year (e.g., 2019)
+            year: Data year (from config.yaml)
             trade_direction: 'Imports', 'Exports', or 'All'
             frequency: 'A' for annual, 'Q' for quarterly
         """

@@ -14,7 +14,7 @@ Create a comprehensive US-BEA data integration system that combines Exiobase MRI
 ## Data Sources Integration
 
 ### 1. Exiobase Data (Primary)
-- **Source**: Pre-downloaded IOT_2019_pxp.zip (reuse existing download process if not available)
+- **Source**: Pre-downloaded IOT_[year]_pxp.zip (reuse existing download process if not available)
 - **Components**: Z-matrix (inter-industry flows), Y-matrix (final demand), F-matrix (environmental extensions)
 - **Processing**: Utilize existing trade.py preprocessing patterns for matrix manipulation
 - **Output**: Core trade flows using established trade_id relational structure
@@ -142,7 +142,7 @@ class USBEATradeFlow(ExiobaseTradeFlow):
 
 ### Phase 1: Base Data Generation
 1. **Exiobase Processing** (leverage existing trade.py patterns)
-   - Download IOT_2019_pxp.zip if not available
+   - Download IOT_[year]_pxp.zip if not available
    - Extract Z, Y, F matrices 
    - Generate base trade.csv with trade_id structure
    - Create industry.csv and factor.csv reference files
@@ -178,7 +178,7 @@ class USBEATradeFlow(ExiobaseTradeFlow):
 ## Output Structure Enhancement
 
 ```
-year/2019/
+year/[year]/
 ├── US/
 │   ├── domestic/
 │   │   ├── trade.csv                    # Base trade flows
