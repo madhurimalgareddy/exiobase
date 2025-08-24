@@ -43,51 +43,51 @@ trade_id, year, region1, region2, industry1, industry2, amount
 - **trade_id**: 5-value composite key (year, region1, region2, industry1, industry2)
 - Links to all other tables as primary foreign key
 
-#### bea_trade_detail.csv (New - BEA API Enhancement)  
+#### bea_trade_detail.csv (BEA API Enhancement)  
 ```csv
 trade_id, bea_commodity_code, bea_industry_code, trade_balance, import_value, export_value, trade_partner_state, transport_mode
 ```
 
-#### state_trade_flows.csv (New - State-Level Analysis)
+#### state_trade_flows.csv (State-Level Analysis)
 ```csv 
 trade_id, origin_state, destination_state, state_industry_code, flow_value, flow_type, employment_impact
 ```
 
-#### trade_price_indices.csv (New - Economic Indicators)
+#### trade_price_indices.csv (Economic Indicators)
 ```csv
 trade_id, import_price_index, export_price_index, exchange_rate, price_year, currency_adjustment_factor
 ```
 
 ### Enhanced Factor Tables
 
-#### flow.csv (New - FEDEFL Integration)
+#### flow.csv (FEDEFL Integration)
 ```csv
 flow_uuid, flowable, context, unit, compartment, flow_class, preferred, external_reference
 ```
 
-#### bea_industry_mapping.csv (New - Industry Concordance)
+#### bea_industry_mapping.csv (Industry Concordance)
 ```csv
 industry_id, exiobase_sector, bea_sector_code, bea_sector_name, naics_code, aggregation_level
 ```
 
-#### trade_factor_bea.csv (New - BEA-Specific Factors)
+#### trade_factor_bea.csv (BEA-Specific Factors)
 ```csv 
 trade_id, factor_id, coefficient_value, bea_multiplier, regional_adjustment, data_source
 ```
 
 ### Analytical Enhancement Tables
 
-#### export_competitiveness.csv (New - Export Analysis)
+#### export_competitiveness.csv (Export Analysis)
 ```csv
 trade_id, revealed_comparative_advantage, export_sophistication_index, market_share, growth_rate
 ```
 
-#### import_dependency.csv (New - Import Analysis)  
+#### import_dependency.csv (Import Analysis)  
 ```csv
 trade_id, import_penetration_ratio, supply_chain_vulnerability, alternative_suppliers, strategic_importance
 ```
 
-#### state_industry_impacts.csv (New - State Economic Impact)
+#### state_industry_impacts.csv (State Economic Impact)
 ```csv
 state_code, industry_code, direct_jobs, indirect_jobs, induced_jobs, total_output_impact, tax_revenue_impact
 ```
@@ -123,17 +123,17 @@ class USBEATradeFlow(ExiobaseTradeFlow):
 
 ### Supporting Modules
 
-#### bea_api_client.py (New)
+#### us-bea_api_client.py
 - BEA API authentication and data retrieval
 - Rate limiting and error handling
 - Data caching and preprocessing
 
-#### state_trade_analyzer.py (New)  
+#### us-state_trade_analyzer.py  
 - State-level trade flow disaggregation
 - Economic impact calculations
 - Employment and output multipliers
 
-#### fedefl_integration.py (New)
+#### us-fedefl_integration.py
 - FEDEFL flow data integration  
 - UUID mapping and flow metadata
 - Environmental flow standardization
