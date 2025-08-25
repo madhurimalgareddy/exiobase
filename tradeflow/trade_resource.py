@@ -237,7 +237,7 @@ def create_split_resources():
             print(f"  Top {category} flows:")
             top_flows = df[df[f'{category}_count'] > 0].head(3)
             for _, row in top_flows.iterrows():
-                print(f"    {row['region1']} {row['industry1']} → {row['region2']}: {row[f'total_{category}_value']:,.0f}")
+                print(f"    {row['region1']} {row['industry1']} -> {row['region2']}: {row[f'total_{category}_value']:,.0f}")
     
     return output_files
 

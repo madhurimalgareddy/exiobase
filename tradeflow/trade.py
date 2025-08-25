@@ -177,6 +177,22 @@ class ExiobaseTradeFlow:
             factors_df['name'] = factors_df['stressor'].str.split(' - ').str[0]
             factor_mapping = dict(zip(factors_df['name'], factors_df['factor_id']))
             
+            # Add robust mapping for common formatting variations
+            robust_mapping = factor_mapping.copy()
+            for name, factor_id in factor_mapping.items():
+                # Handle PM2_5 vs PM2.5 variations
+                if 'PM2_5' in name:
+                    robust_mapping['PM2.5'] = factor_id
+                elif 'PM2.5' in name:
+                    robust_mapping['PM2_5'] = factor_id
+                # Handle other common variations
+                robust_mapping[name.replace('_', '.')] = factor_id
+                robust_mapping[name.replace('.', '_')] = factor_id
+            
+            factor_mapping = robust_mapping
+            print(f"Created factor mapping with {len(factor_mapping)} entries")
+            print(f"Sample mapped factors: {list(factor_mapping.keys())[:10]}")
+            
             extensions = ['air_emissions', 'employment', 'energy', 'land', 'material', 'water']
             
             all_trade_factor = []
@@ -263,9 +279,21 @@ class ExiobaseTradeFlow:
                             trade_factor_merge = trade_factor_merge[abs(trade_factor_merge['impact_value']) > 0.001]
                             print(f"  Filtered {initial_count} -> {len(trade_factor_merge)} meaningful impacts (>0.001)")
                             
-                            # Keep only needed columns
+                            # Keep only needed columns and verify factor_id integrity
                             trade_factor_subset = trade_factor_merge[['trade_id', 'factor_id', 'coefficient', 'impact_value']]
-                            trade_factor_subset['factor_id'] = trade_factor_subset['factor_id'].astype(int)
+                            
+                            # Check for any remaining NaN values in factor_id
+                            nan_count = trade_factor_subset['factor_id'].isna().sum()
+                            if nan_count > 0:
+                                print(f"  WARNING: Found {nan_count} unmapped factor_ids, removing them")
+                                # Debug: show unmapped stressor names
+                                unmapped_stressors = trade_factor_merge[trade_factor_merge['factor_id'].isna()]['stressor'].unique()
+                                print(f"  Unmapped stressors: {list(unmapped_stressors)[:10]}...")  # Show first 10
+                                trade_factor_subset = trade_factor_subset.dropna(subset=['factor_id'])
+                            
+                            # Convert to int only after removing NaN values
+                            if not trade_factor_subset.empty:
+                                trade_factor_subset['factor_id'] = trade_factor_subset['factor_id'].astype(int)
                             
                             all_trade_factor.extend(trade_factor_subset.to_dict('records'))
             

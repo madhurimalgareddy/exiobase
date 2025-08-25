@@ -1,12 +1,12 @@
-TRADEFLOW: imports
-YEAR: 2022
+TRADEFLOW: domestic
+YEAR: 2019
 COUNTRY:
-  list: US
+  list: RU
 FOLDERS:
-  base: ../../trade-data/year/{year}
-  imports: ../../trade-data/year/{year}/{country}/imports
-  exports: ../../trade-data/year/{year}/{country}/exports
-  domestic: ../../trade-data/year/{year}/{country}/domestic
+  base: ../../tradeflow-data/year/{year}
+  imports: ../../tradeflow-data/year/{year}/{country}/imports
+  exports: ../../tradeflow-data/year/{year}/{country}/exports
+  domestic: ../../tradeflow-data/year/{year}/{country}/domestic
 FILES:
   factors: factor.csv
   industries: industry.csv
