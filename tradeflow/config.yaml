@@ -1,7 +1,8 @@
-TRADEFLOW: domestic
+# COUNTRY.list "all" = run all, "default" = run only incomplete ones within these 12: AU, BR, CA, CN, DE, FR, GB, IN, IT, JP, KR, US
+TRADEFLOW: domestic,imports,exports
 YEAR: 2019
 COUNTRY:
-  list: RU
+  list: US
 FOLDERS:
   base: ../../tradeflow-data/year/{year}
   imports: ../../tradeflow-data/year/{year}/{country}/imports
