@@ -161,6 +161,42 @@ class ExiobaseTradeFlow:
         print(f"    Selected {len(F_stacked)} factors from {ext_name} (partial factors mode)")
         return F_stacked
 
+    def _apply_coefficient_scaling(self, F_stacked, factors_df):
+        """
+        Apply scaling factors to coefficients based on factor units to fix unrealistic values
+        """
+        # Make a copy to avoid modifying original data
+        F_scaled = F_stacked.copy()
+        
+        # Merge with factor metadata to get units (left merge preserves all original rows)
+        factor_units = factors_df[['factor_id', 'unit', 'extension']].drop_duplicates('factor_id')
+        F_with_units = F_scaled.merge(factor_units, on='factor_id', how='left')
+        
+        # Define scaling factors by unit type to convert to realistic per-dollar impacts
+        scaling_factors = {
+            '1000 p': 0.001,        # Employment people: thousands to actual people
+            'M.hr': 0.000001,       # Employment hours: millions to actual hours  
+            'kg': 0.001,            # Emissions: scale down by 1000x
+            'MJ': 0.0001,           # Energy: scale down by 10000x
+            'm2': 0.0001,           # Land use: scale down by 10000x
+            'm3': 0.001,            # Water: scale down by 1000x
+            'TJ': 0.000001,         # Energy (terajoules): scale down significantly
+            'PJ': 0.000000001,      # Energy (petajoules): scale down significantly
+            'Mm3': 0.000001,        # Water (million cubic meters): scale down
+            'km2': 0.0000001,       # Land (square kilometers): scale down significantly
+        }
+        
+        # Apply scaling factors
+        for unit, scale_factor in scaling_factors.items():
+            mask = F_with_units['unit'] == unit
+            if mask.any():
+                original_count = mask.sum()
+                F_with_units.loc[mask, 'coefficient'] *= scale_factor
+                print(f"    Scaled {original_count} coefficients with unit '{unit}' by {scale_factor}")
+        
+        # Return the scaled data with original columns structure
+        return F_with_units[F_stacked.columns.tolist()]
+
     def create_trade_factor(self, trade_df, exio_model):
         """
         Create trade_factor.csv that links each trade flow to environmental factors
@@ -224,6 +260,10 @@ class ExiobaseTradeFlow:
                         F_stacked['flowable'] = F_stacked['stressor'].apply(lambda x: x.split(' - ')[0] if ' - ' in x else x)
                         F_stacked['factor_id'] = F_stacked['flowable'].map(factor_mapping)
                         F_stacked = F_stacked.dropna(subset=['factor_id'])
+                        
+                        # Apply coefficient scaling to fix unrealistic values
+                        F_stacked = self._apply_coefficient_scaling(F_stacked, factors_df)
+                        print(f"  Applied coefficient scaling for realistic environmental impacts")
                         
                         # Apply partial factors filtering if not using large factors
                         if not self.use_large_factors and self.config['PROCESSING'].get('use_partial_factors', True):
